@@ -1,0 +1,12 @@
+[Unit]
+Description=Prometheus Server
+After=network.target
+
+[Service]
+ExecStart=%h/.local/share/prometheus/prometheus --config.file=%h/.config/prometheus/prometheus.yml
+Restart=always
+RestartSec=5
+WorkingDirectory=%h/.local/share/prometheus
+
+[Install]
+WantedBy=default.target
