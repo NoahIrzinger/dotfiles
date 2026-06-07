@@ -1,0 +1,16 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "dependencyDashboard": true,
+  "rangeStrategy": "pin",
+  "mise": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "one PR per tool so you can approve bumps individually",
+      "matchManagers": ["mise"],
+      "groupName": null
+    }
+  ]
+}
