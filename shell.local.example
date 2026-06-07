@@ -1,0 +1,22 @@
+# ~/.shell.local: machine-local overrides, sourced by common.sh. Not tracked.
+# Copy and edit:
+#
+#   cp shell.local.example ~/.shell.local
+#
+# Per-machine values and anything you don't want committed go here.
+
+# --- environment ---
+# export SOME_VALUE="..."
+
+# --- per-machine PATH / SDKs ---
+# export PATH="$PATH:$HOME/some/sdk/bin"
+
+# --- tool managers specific to this box (mise supersedes most) ---
+# export PYENV_ROOT="$HOME/.pyenv"; eval "$(pyenv init -)"
+# export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+# --- android adb over the Windows adb server (WSL2) ---
+# run `adb start-server` on Windows (matching platform-tools version), then set the
+# host. common.sh -> ADB_SERVER_SOCKET=tcp:$WIN_ADB_HOST:5037. uncomment one:
+# export WIN_ADB_HOST="$(ip route | awk '/^default/{print $3}')"   # NAT: Windows host
+# export WIN_ADB_HOST=localhost                                     # mirrored networking
