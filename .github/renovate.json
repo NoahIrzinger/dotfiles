@@ -1,0 +1,24 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "dependencyDashboard": true,
+  "rangeStrategy": "pin",
+  "automerge": true,
+  "platformAutomerge": true,
+  "rebaseWhen": "behind-base-branch",
+  "mise": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "one PR per tool",
+      "matchManagers": ["mise"],
+      "groupName": null
+    },
+    {
+      "description": "majors stay manual: a surprise upstream major shouldn't land unreviewed (see mise.toml)",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    }
+  ]
+}

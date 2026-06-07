@@ -1,0 +1,36 @@
+# lcars: near-black, amber + periwinkle + lilac
+# Code coloring (via the nvim custom_highlights): functions/keywords gold,
+# preproc orange, constants/types periwinkle, strings warm tan, specials lilac.
+flavour=mocha
+
+# accents
+rosewater=ffb38a
+flamingo=ff9966
+pink=cc99ff
+mauve=cc99cc
+red=cc6666
+maroon=cc6699
+peach=ff9900
+yellow=ff9900
+green=ffcc66
+teal=66cccc
+sky=99ccff
+sapphire=6a9fd8
+blue=9999ff
+lavender=b3b3ff
+
+# text: warm parchment on black
+text=f5e6d0
+subtext1=ddc9a8
+subtext0=c4b394
+
+# overlays / surfaces / structure: near-black with a faint purple lift
+overlay2=a99ab8
+overlay1=8a7a99
+overlay0=6b5b7a
+surface2=3a2d42
+surface1=2a2030
+surface0=1c1622
+base=0a0a0f
+mantle=060609
+crust=000000
