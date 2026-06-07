@@ -1,0 +1,45 @@
+# Single canonical toolset. Versions are PINNED (to a major/minor line) rather than
+# "latest" for reproducibility and supply-chain review: a fresh install gets the same
+# tools across machines, and a surprise upstream major can't land without a reviewed
+# commit here. mise verifies download checksums for these registry tools. Bump a line
+# intentionally (e.g. `mise use ripgrep@16`) and commit it.
+# Opt out per machine:  ./install.sh --skip gradle,java
+#   or persist:         export MISE_DISABLE_TOOLS="gradle,java"
+[tools]
+# editor / terminal / cli
+neovim    = "0.12"
+tmux      = "3.6b"
+zoxide    = "0.9"
+fzf       = "0.73"
+ripgrep   = "15"
+fd        = "10"
+jq        = "1.8"
+lazygit   = "0.62"
+
+# languages
+go        = "1.24"
+python    = "3.12"
+node      = "24"
+
+# kubernetes
+kubectl   = "1.36"
+k9s       = "0.50"
+kubecolor = "0.6"
+helm      = "4"
+
+# cli tools via the npm backend (independent of the node tool, so they survive
+# node upgrades, unlike a plain `npm i -g`). EXACT version on purpose: a partial
+# pin (0.137) makes mise query the npm registry to resolve the patch on every shell
+# activation, which hangs behind a proxy. an exact version is a filesystem check.
+"npm:@openai/codex" = "0.137.0"
+
+# heavier toolchains (android builds etc.). skip on lean boxes / CI:
+#   ./install.sh --skip gradle,java,android-sdk
+java          = "temurin-21"   # LTS, AGP-compatible; don't bump past what Android supports
+gradle        = "9"
+"android-sdk" = "11.0"          # cmdline-tools (sdkmanager); install platforms/build-tools per project
+
+[settings]
+# fail fast instead of bricking shell startup: fewer retries on a stalled network.
+http_retries = 1
+fetch_remote_versions_timeout = "8s"

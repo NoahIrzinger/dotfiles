@@ -1,0 +1,31 @@
+name: ci
+
+# Proves a from-zero install works on Linux + macOS, then asserts health with the
+# doctor. Catches the class of bug that only shows on a cold machine (cold-start
+# plugin requires, missing tools, shell-init hangs) before it reaches a real box.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: cache mise tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/mise
+          key: mise-${{ matrix.os }}-${{ hashFiles('mise.toml') }}
+
+      - name: cold install (skip heavy JVM / android tools)
+        run: ./install.sh --skip gradle,java,android-sdk
+
+      - name: doctor (asserts nvim loads, tmux parses, tools present, no shell hang)
+        run: ./install.sh --check
