@@ -31,7 +31,7 @@ helm      = "4"
 # upgrades, unlike a plain `npm i -g`). EXACT version on purpose: a partial pin
 # (0.137) makes mise query the npm registry to resolve the patch on every shell
 # activation, which hangs behind a proxy. an exact version is a filesystem check.
-"npm:@openai/codex" = "0.137.0"
+"npm:@openai/codex" = "0.138.0"
 
 # claude + opencode ship native binaries; their npm packages are thin downloaders
 # whose postinstall mise's npm backend skips (the wrapper then errors "native binary
