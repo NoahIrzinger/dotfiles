@@ -23,7 +23,7 @@ node      = "v24.16.0"
 
 # kubernetes
 kubectl   = "1.36"
-k9s       = "0.50"
+k9s       = "0.51.0"
 kubecolor = "0.6"
 helm      = "4"
 
