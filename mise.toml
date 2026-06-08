@@ -19,7 +19,7 @@ lazygit   = "0.62"
 # languages
 go        = "1.24"
 python    = "3.12"
-node      = "24"
+node      = "v24.16.0"
 
 # kubernetes
 kubectl   = "1.36"
