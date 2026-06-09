@@ -16,7 +16,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4.3.1
+      - uses: actions/checkout@v6.0.3
 
       - name: cache mise tools
         uses: actions/cache@v4.3.0
