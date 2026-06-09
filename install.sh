@@ -168,6 +168,20 @@ doctor(){
       && { row ok "tmux config"; tmux -L "$sock" kill-server 2>/dev/null; } || row fail "tmux config" "parse error"
   fi
 
+  # LLM CLIs: a shim can exist while the binary is broken (npm-backed claude/opencode
+  # skip the postinstall that fetches the native binary, so it errors "native binary
+  # not installed"). actually run each present one rather than trust the shim.
+  local t llm_seen="" llm_bad=""
+  for t in claude codex opencode; do
+    command -v "$t" >/dev/null 2>&1 || continue
+    llm_seen=1
+    out="$(to 15 "$t" --version 2>&1)"; rc=$?
+    { [ "$rc" = 0 ] && ! printf '%s' "$out" | grep -qiE 'native binary not installed|postinstall'; } \
+      || llm_bad="$llm_bad $t"
+  done
+  if [ -n "$llm_bad" ]; then row fail "llm clis" "broken:${llm_bad}; run dotfiles-update"
+  elif [ -n "$llm_seen" ]; then row ok "llm clis" "claude codex opencode run"; fi
+
   to 8 bash -lic 'exit' >/dev/null 2>&1; rc=$?
   case "$rc" in 124|142) row warn "shell startup" "slow/hang (>8s)" ;; *) row ok "shell startup" "no hang" ;; esac
 
