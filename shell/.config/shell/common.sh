@@ -51,8 +51,39 @@ ca-rebuild() {  # combine certifi's public roots + your drop-in certs -> cacert.
   echo "rebuilt $out ($(grep -c 'BEGIN CERT' "$out") certs); open a new shell to pick it up"
 }
 
-# --- vi mode on the command line (works in bash and zsh) ---
-set -o vi 2>/dev/null || true
+# --- vi mode on the command line ---
+# vi editing at the prompt, with the niceties a hand setup adds: snappy Esc, jk to
+# leave insert, block/beam cursor per mode (DECSCUSR \e[1 q / \e[5 q, honored by most
+# emulators), and the muscle-memory ctrl binds kept in insert mode. bash uses readline,
+# zsh uses ZLE, so the two need different code.
+if [ "$_sh" = zsh ]; then
+  bindkey -v
+  KEYTIMEOUT=1                                   # 10ms, not the 400ms default: Esc is instant
+  bindkey -M viins 'jk' vi-cmd-mode
+  bindkey -M viins '^r' history-incremental-search-backward
+  bindkey -M viins '^a' beginning-of-line
+  bindkey -M viins '^e' end-of-line
+  bindkey -M viins '^w' backward-kill-word
+  bindkey -M viins '^?' backward-delete-char     # backspace still works after a cmd-mode trip
+  _vi_cursor() { case $KEYMAP in (vicmd) printf '\e[1 q';; (*) printf '\e[5 q';; esac; }
+  zle -N zle-keymap-select _vi_cursor            # block in normal, beam in insert
+  _vi_cursor_init() { zle -K viins; printf '\e[5 q'; }
+  zle -N zle-line-init _vi_cursor_init           # every new prompt starts in insert + beam
+elif [ "$_sh" = bash ]; then
+  set -o vi
+  # readline 7+: show-mode-in-prompt drives the cursor via the per-mode strings (the
+  # \1..\2 are zero-width markers). these no-op on old (macOS system) bash.
+  bind 'set show-mode-in-prompt on' 2>/dev/null
+  bind 'set vi-ins-mode-string "\1\e[5 q\2"' 2>/dev/null
+  bind 'set vi-cmd-mode-string "\1\e[1 q\2"' 2>/dev/null
+  bind -m vi-insert '"jk": vi-movement-mode' 2>/dev/null
+  bind -m vi-insert '"\C-r": reverse-search-history' 2>/dev/null
+  bind -m vi-insert '"\C-a": beginning-of-line' 2>/dev/null
+  bind -m vi-insert '"\C-e": end-of-line' 2>/dev/null
+  bind -m vi-insert '"\C-w": backward-kill-word' 2>/dev/null
+else
+  set -o vi 2>/dev/null || true
+fi
 
 # A hung tool-init must NEVER brick the shell. `eval "$(tool init)"` blocks forever
 # if the tool stalls (e.g. mise resolving a tool over a proxy that swallows the
