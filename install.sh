@@ -279,7 +279,10 @@ if [ "$CONFIGS_ONLY" = 0 ]; then
     have brew || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     brew install git stow
   else
-    $SUDO apt-get update -qq
+    # tolerate a flaky/blocked third-party apt repo (e.g. a proxy serving an HTML page
+    # for a custom source, "Clearsigned file isn't valid, got NOSPLIT"). the base
+    # packages come from the main archives, so a failed index refresh must not abort.
+    $SUDO apt-get update -qq || log "  apt update had errors (a third-party repo may be blocked); continuing"
     $SUDO apt-get install -y git stow curl ca-certificates build-essential unzip
   fi
 
