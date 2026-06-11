@@ -19,7 +19,7 @@ set("n", "<leader>fr", function()
 end, { desc = "Telescope Find HTTP Files in /src/requests" })
 set("n", "<leader>ff", function()
 	require("telescope.builtin").find_files({
-		find_command = { "fdfind", "--type", "f", "--color", "never", "--no-ignore-vcs", "--hidden" },
+		find_command = { "fd", "--type", "f", "--color", "never", "--no-ignore-vcs", "--hidden" },
 	})
 end, { desc = "Telescope Find Files Working Directory" })
 --set("n", "<leader>ff", "<cmd>Telescope find_files hidden=true<cr>", { desc = "Telescope Find Files Working Directory" })

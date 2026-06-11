@@ -401,10 +401,6 @@ return {
 				capabilities = capabilities,
 				settings = {},
 			})
-			vim.lsp.config("htmx", {
-				capabilities = capabilities,
-				settings = {},
-			})
 			vim.lsp.config("gradle_ls", {
 				capabilities = capabilities,
 				settings = {},
@@ -462,7 +458,7 @@ return {
 				},
 			})
 
-			vim.lsp.enable({ "gopls", "html", "htmx", "gradle_ls", "lua_ls", "basedpyright", "ruff", "omnisharp" })
+			vim.lsp.enable({ "gopls", "html", "gradle_ls", "lua_ls", "basedpyright", "ruff", "omnisharp" })
 
 			---- TODO where is lemminx from?
 			--lspconfig.lemminx.setup({
@@ -810,7 +806,35 @@ return {
 	{
 		"williamboman/mason.nvim",
 		lazy = false,
-		opts = {},
+		config = function()
+			require("mason").setup()
+			-- declare every tool the config uses, so a fresh or drifted machine installs
+			-- them. without this, servers were hand-installed via :Mason and silently
+			-- drifted from what the config enables (e.g. config switched to basedpyright
+			-- while mason still only had pyright -> no python go-to-definition).
+			local ensure = {
+				-- lsp servers (must match vim.lsp.enable in the lspconfig block)
+				"gopls", "lua-language-server", "basedpyright", "ruff",
+				"html-lsp", "gradle-language-server", "omnisharp",
+				-- debuggers
+				"debugpy", "netcoredbg", "delve", "go-debug-adapter",
+				-- formatters / linters
+				"black", "gofumpt", "goimports", "goimports-reviser", "golines",
+				"stylua", "prettierd", "yamlfmt", "yamllint", "htmlbeautifier", "jq",
+				"clangd", "cpptools",
+			}
+			-- only auto-install in a real session, not headless (doctor/CI/`+Lazy! restore`),
+			-- where a +qa would abort mid-download and thrash on every invocation.
+			if #vim.api.nvim_list_uis() > 0 then
+				local registry = require("mason-registry")
+				registry.refresh(function()
+					for _, name in ipairs(ensure) do
+						local ok, pkg = pcall(registry.get_package, name)
+						if ok and not pkg:is_installed() then pkg:install() end
+					end
+				end)
+			end
+		end,
 	},
 
 	-- coding helpers
