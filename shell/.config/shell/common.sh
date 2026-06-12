@@ -20,7 +20,11 @@ export KUBE_EDITOR=nvim
 export DISABLE_AUTOUPDATER=1   # claude version is pinned in mise.toml; don't let it self-update past the pin
 
 # --- PATH ---
-export PATH="$HOME/.local/bin:$PATH"                    # mise shims + user bins
+export PATH="$HOME/.local/bin:$PATH"                    # user bins
+# mise shims, added statically so every mise-managed tool (node, npx, kubectl, ...)
+# resolves even if `mise activate` below times out or fails behind a proxy. activate
+# still runs for per-directory version switching; PATH no longer depends on it.
+[ -d "$HOME/.local/share/mise/shims" ] && export PATH="$HOME/.local/share/mise/shims:$PATH"
 export PATH="$PATH:$HOME/go/bin"                         # `go install` targets
 export PATH="$PATH:$HOME/.local/share/nvim/mason/bin"    # nvim Mason tools
 export PATH="$PATH:$HOME/.dotfiles/themes"               # `theme` color-theme switcher
