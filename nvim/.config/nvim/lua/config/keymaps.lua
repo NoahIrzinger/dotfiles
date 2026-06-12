@@ -18,9 +18,9 @@ set("n", "<leader>fr", function()
 	require("telescope.builtin").find_files({ cwd = vim.fn.expand("~/src/http") })
 end, { desc = "Telescope Find HTTP Files in /src/requests" })
 set("n", "<leader>ff", function()
-	require("telescope.builtin").find_files({
-		find_command = { "fd", "--type", "f", "--color", "never", "--no-ignore-vcs", "--hidden" },
-	})
+	-- finder-agnostic: let telescope auto-detect fd / fdfind / rg and pass portable
+	-- opts, instead of hardcoding a binary name that breaks when it's absent/renamed.
+	require("telescope.builtin").find_files({ hidden = true, no_ignore = true })
 end, { desc = "Telescope Find Files Working Directory" })
 --set("n", "<leader>ff", "<cmd>Telescope find_files hidden=true<cr>", { desc = "Telescope Find Files Working Directory" })
 --set(
