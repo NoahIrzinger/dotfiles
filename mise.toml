@@ -33,6 +33,13 @@ helm      = "4"
 # activation, which hangs behind a proxy. an exact version is a filesystem check.
 "npm:@openai/codex" = "0.139.0"
 
+# pi (earendil) is a pure-JS coding agent: bin is dist/cli.js, os=any, no
+# postinstall. so the npm backend works cleanly here, unlike claude/opencode
+# below (whose npm wrappers need a postinstall mise skips). same exact-pin rule
+# as codex: an exact version is a filesystem check, not a proxy-hanging registry
+# query. bump with `mise use npm:@earendil-works/pi-coding-agent@<ver>`.
+"npm:@earendil-works/pi-coding-agent" = "0.79.3"
+
 # claude + opencode ship native binaries; their npm packages are thin downloaders
 # whose postinstall mise's npm backend skips (the wrapper then errors "native binary
 # not installed"). use the aqua backend, which fetches the real release binary.
