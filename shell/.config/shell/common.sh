@@ -136,6 +136,19 @@ fi
 # run one there (set WIN_ADB_HOST in ~/.shell.local, e.g. the host IP).
 [ -n "${WIN_ADB_HOST:-}" ] && export ADB_SERVER_SOCKET="tcp:${WIN_ADB_HOST}:5037"
 
+# --- WSL: Windows clipboard for image paste ---
+# wsl-optimize.sh sets appendWindowsPath=false, which strips powershell.exe from
+# PATH. Claude Code reads a Windows-clipboard IMAGE by shelling out to
+# powershell.exe (Get-Clipboard -Format Image); without it, image paste silently
+# fails while text paste (through the TTY) keeps working. Re-add ONLY the
+# PowerShell dir (not the whole Windows PATH we dropped) so the bridge resolves.
+# Self-guarding: no-op unless we're in WSL and powershell.exe is actually absent.
+if grep -qi microsoft /proc/version 2>/dev/null && ! command -v powershell.exe >/dev/null 2>&1; then
+  _ps="/mnt/c/Windows/System32/WindowsPowerShell/v1.0"
+  [ -d "$_ps" ] && export PATH="$PATH:$_ps"
+  unset _ps
+fi
+
 # --- dotfiles update nudge ---
 # Once a day on an interactive shell, fetch origin/master in the background and
 # stash how many commits we're behind. The CURRENT shell never waits on the

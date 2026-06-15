@@ -39,6 +39,14 @@ fi
 
 echo ""
 echo "[1/4] /etc/wsl.conf"
+# appendWindowsPath=false: don't inherit the Windows PATH into WSL. two reasons:
+#  (1) speed  - every Windows PATH entry is a /mnt/c 9p path; scanning them on every
+#               completion / command-not-found makes the shell laggy.
+#  (2) collisions - Windows .exe shims (node.exe, kubectl.exe, python.exe, ...) would
+#               shadow the mise-managed Linux tools; dropping them lets the shims win.
+# trade-off: this also drops powershell.exe, which Claude Code needs to read a
+# Windows-clipboard image. common.sh re-adds just that one dir back (not the whole
+# Windows PATH) so image paste works without re-introducing (1)/(2).
 sudo tee /etc/wsl.conf > /dev/null << 'EOF'
 [boot]
 systemd=true
