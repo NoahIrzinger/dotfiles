@@ -359,18 +359,36 @@ if [ "$CONFIGS_ONLY" = 0 ]; then
   # not the distro adb (protocol skews against the device's adb server). decoupled
   # from the heavy SDK so device work always has a current adb. skipped when
   # android-sdk is (--skip android-sdk), e.g. on lean boxes / CI.
+  PLATFORM_TOOLS_VERSION="37.0.0"
+  platform_tools_expected_sha(){  # $1 = linux|darwin
+    case "$1" in
+      linux)  echo 198ae156ab285fa555987219af237b31102fefe8b9d2bc274708a8d4f2865a07 ;;
+      darwin) echo 094a1395683c509fd4d48667da0d8b5ef4d42b2abfcd29f2e8149e2f989357c7 ;;
+    esac
+  }
   case ",${MISE_DISABLE_TOOLS:-}," in
     *,android-sdk,*) : ;;
     *)
-      if [ "$DRY" = 1 ]; then plan "install Google platform-tools (adb/fastboot)"
-      elif ! [ -x "$HOME/.local/share/android/platform-tools/adb" ]; then
-        log "Installing Android platform-tools (adb/fastboot)"
-        ptos=linux; [ "$OS" = macos ] && ptos=darwin
+      ptos=linux; [ "$OS" = macos ] && ptos=darwin
+      ptprops="$HOME/.local/share/android/platform-tools/source.properties"
+      if [ "$DRY" = 1 ]; then plan "install Google platform-tools $PLATFORM_TOOLS_VERSION (checksum-verified)"
+      elif ! [ -x "$HOME/.local/share/android/platform-tools/adb" ] \
+        || ! grep -q "^Pkg.Revision=$PLATFORM_TOOLS_VERSION$" "$ptprops" 2>/dev/null; then
+        log "Installing Android platform-tools $PLATFORM_TOOLS_VERSION (checksum-verified)"
         ptmp="$(mktemp -d)"
-        if curl -fsSL -o "$ptmp/pt.zip" "https://dl.google.com/android/repository/platform-tools-latest-${ptos}.zip"; then
-          mkdir -p "$HOME/.local/share/android"
-          unzip -o -q "$ptmp/pt.zip" -d "$HOME/.local/share/android" \
-            && log "  adb -> ~/.local/share/android/platform-tools"
+        pturl="https://dl.google.com/android/repository/platform-tools_r${PLATFORM_TOOLS_VERSION}-${ptos}.zip"
+        ptwant="$(platform_tools_expected_sha "$ptos")"
+        if curl -fsSL -o "$ptmp/pt.zip" "$pturl"; then
+          ptgot="$(sha256_of "$ptmp/pt.zip")"
+          if [ "$ptgot" = "$ptwant" ]; then
+            mkdir -p "$HOME/.local/share/android"
+            unzip -o -q "$ptmp/pt.zip" -d "$HOME/.local/share/android" \
+              && log "  adb -> ~/.local/share/android/platform-tools"
+          else
+            log "  platform-tools checksum mismatch; skipping"
+            log "    expected $ptwant"
+            log "    got      $ptgot"
+          fi
         else log "  platform-tools download failed (proxy?); skipping"; fi
         rm -rf "$ptmp"
       fi
@@ -383,12 +401,24 @@ fi
 
 # ---- make the repo's toolset the GLOBAL mise config (tools active in every dir,
 #      not just inside the repo) ----
-if [ "$DRY" = 1 ]; then plan "link ~/.config/mise/config.toml -> repo mise.toml"
-else mkdir -p "$HOME/.config/mise"; ln -sf "$REPO/mise.toml" "$HOME/.config/mise/config.toml"; fi
+BK="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
+MISE_GLOBAL="$HOME/.config/mise/config.toml"
+if [ "$DRY" = 1 ]; then
+  if [ -e "$MISE_GLOBAL" ] || [ -L "$MISE_GLOBAL" ]; then plan "back up $MISE_GLOBAL if it is not this repo's symlink"; fi
+  plan "link ~/.config/mise/config.toml -> repo mise.toml"
+else
+  mkdir -p "$HOME/.config/mise"
+  if { [ -e "$MISE_GLOBAL" ] || [ -L "$MISE_GLOBAL" ]; } \
+     && ! { [ -L "$MISE_GLOBAL" ] && [ "$(readlink "$MISE_GLOBAL")" = "$REPO/mise.toml" ]; }; then
+    mkdir -p "$(dirname "$BK/.config/mise/config.toml")"
+    mv "$MISE_GLOBAL" "$BK/.config/mise/config.toml"
+    echo "   backed up $MISE_GLOBAL"
+  fi
+  ln -sf "$REPO/mise.toml" "$MISE_GLOBAL"
+fi
 
 # ---- 4. stow configs (directory-level backup of anything that would collide) ----
 log "Linking configs with stow"
-BK="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
 
 backup_target(){  # $1 = absolute target; back up only a real, not-yet-stowed file/dir
   local tgt="$1" rel="${1#"$HOME"/}" pdir

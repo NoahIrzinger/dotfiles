@@ -31,23 +31,10 @@ end, { desc = "Telescope Find Files Working Directory" })
 --)
 --set("n", "<leader>fg", "<cmd>Telescope live_grep<cr>", { desc = "Telescope live grep" })
 set("n", "<leader>fq", ":lua require('telescope').extensions.live_grep_args.live_grep_args()<CR>")
--- this works with '<leader>fg' then search for: "foo" -tsomefolder etc...
+-- advanced grep: search for `foo` then pass ripgrep args like `-tgo` or `--glob '*.lua'`
 set("n", "<leader>fg", function()
-	require("telescope.builtin").live_grep({
-		vimgrep_arguments = {
-			-- all required except `--smart-case`
-			"rg",
-			"--no-ignore",
-			"--color=never",
-			"--no-heading",
-			"--with-filename",
-			"--line-number",
-			"--column",
-			"--smart-case",
-		},
-	})
 	require("telescope").extensions.live_grep_args.live_grep_args()
-end, { desc = "Telescope live grep" })
+end, { desc = "Telescope live grep with args" })
 set("n", "<leader>fb", "<cmd>Telescope buffers<cr>", { desc = "Telescope buffers" })
 --set('n', '<leader>fh', "<cmd>Telescope help_tags<cr>", { desc = 'Telescope help tags' })
 
@@ -86,13 +73,13 @@ end, { noremap = true, desc = "Debugger Continue" })
 set("n", "<leader>do", "<cmd>lua require('dap').step_over()<cr>", { noremap = true, desc = "Debugger Step Over" })
 set("n", "<leader>di", "<cmd>lua require('dap').step_into()<cr>", { noremap = true, desc = "Debugger Step Into" })
 local function open_max_float()
-  local width = vim.o.columns
-  local height = vim.o.lines - 2 -- subtract cmdline/statusline
-  require('dapui').float_element(nil, {
-    width = width,
-    height = height,
-    position = 'center'
-  })
+	local width = vim.o.columns
+	local height = vim.o.lines - 2 -- subtract cmdline/statusline
+	require("dapui").float_element(nil, {
+		width = width,
+		height = height,
+		position = "center",
+	})
 end
 set("n", "<leader>df", open_max_float, { desc = "Open Floating Element Full Size" })
 --set(
@@ -145,4 +132,4 @@ vim.api.nvim_set_keymap("n", "k", "<Plug>(accelerated_jk_gk)", {})
 --set('n', '<leader>gg', '<Plug>(GitLabToggleCodeSuggestions)')
 --
 --
-vim.keymap.set('n', '<leader>cc', '<cmd>ClaudeCode<CR>', { desc = 'Toggle Claude Code' })
+vim.keymap.set("n", "<leader>cc", "<cmd>ClaudeCode<CR>", { desc = "Toggle Claude Code" })

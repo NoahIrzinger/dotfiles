@@ -9,6 +9,24 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.3
+
+      - uses: jdx/mise-action@v3
+        with:
+          install: false
+
+      - name: install lint tools
+        run: mise install -y shellcheck stylua
+
+      - name: shellcheck
+        run: shellcheck --severity=warning install.sh link.sh uninstall.sh themes/theme wsl/wsl-optimize.sh
+
+      - name: stylua
+        run: stylua --check nvim/.config/nvim
+
   install:
     strategy:
       fail-fast: false

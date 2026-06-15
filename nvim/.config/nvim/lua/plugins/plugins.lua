@@ -12,50 +12,50 @@ return {
 				require("catppuccin").setup({
 					flavour = (theme and theme.flavour) or "latte",
 					color_overrides = (theme and { all = theme.colors }) or {},
-				custom_highlights = function(colors)
-					return {
-						LineNr = { fg = colors.surface1 },
-						CursorLineNr = { fg = colors.overlay2 },
-						CursorLine = { bg = colors.surface0 },
-						ColorColumn = { bg = colors.surface0 },
-						Visual = { bg = colors.surface1 },
-						MsgArea = { fg = colors.subtext0 },
-						TabLine = { bg = colors.mantle },
-						TabLineFill = { bg = colors.mantle },
-						TabLineSel = { fg = colors.subtext0, bg = colors.base },
+					custom_highlights = function(colors)
+						return {
+							LineNr = { fg = colors.surface1 },
+							CursorLineNr = { fg = colors.overlay2 },
+							CursorLine = { bg = colors.surface0 },
+							ColorColumn = { bg = colors.surface0 },
+							Visual = { bg = colors.surface1 },
+							MsgArea = { fg = colors.subtext0 },
+							TabLine = { bg = colors.mantle },
+							TabLineFill = { bg = colors.mantle },
+							TabLineSel = { fg = colors.subtext0, bg = colors.base },
 
-						GitSignsAdd = { fg = colors.green },
-						GitSignsChange = { fg = colors.yellow },
-						GitSignsDelete = { fg = colors.red },
-						TelescopeBorder = { fg = colors.subtext0 },
+							GitSignsAdd = { fg = colors.green },
+							GitSignsChange = { fg = colors.yellow },
+							GitSignsDelete = { fg = colors.red },
+							TelescopeBorder = { fg = colors.subtext0 },
 
-						Constant = { fg = colors.blue },
-						String = { fg = colors.subtext0 },
-						Character = { fg = colors.subtext0 },
-						Number = { fg = colors.blue },
-						Boolean = { fg = colors.blue },
-						Float = { fg = colors.blue },
-						Identifier = { fg = colors.green },
-						Function = { fg = colors.green },
-						Statement = { fg = colors.green },
-						Conditional = { fg = colors.green },
-						Repeat = { fg = colors.green },
-						Label = { fg = colors.green },
-						Operator = { fg = colors.subtext0 },
-						Keyword = { fg = colors.green },
-						Exception = { fg = colors.green },
-						PreProc = { fg = colors.yellow },
-						Include = { fg = colors.yellow },
-						Define = { fg = colors.yellow },
-						Macro = { fg = colors.yellow },
-						PreCondit = { fg = colors.yellow },
-						Type = { fg = colors.blue },
-						StorageClass = { fg = colors.overlay2 },
-						Structure = { fg = colors.subtext0 },
-						Special = { fg = colors.overlay2 },
-						SpecialChar = { fg = colors.overlay2 },
-					}
-				end,
+							Constant = { fg = colors.blue },
+							String = { fg = colors.subtext0 },
+							Character = { fg = colors.subtext0 },
+							Number = { fg = colors.blue },
+							Boolean = { fg = colors.blue },
+							Float = { fg = colors.blue },
+							Identifier = { fg = colors.green },
+							Function = { fg = colors.green },
+							Statement = { fg = colors.green },
+							Conditional = { fg = colors.green },
+							Repeat = { fg = colors.green },
+							Label = { fg = colors.green },
+							Operator = { fg = colors.subtext0 },
+							Keyword = { fg = colors.green },
+							Exception = { fg = colors.green },
+							PreProc = { fg = colors.yellow },
+							Include = { fg = colors.yellow },
+							Define = { fg = colors.yellow },
+							Macro = { fg = colors.yellow },
+							PreCondit = { fg = colors.yellow },
+							Type = { fg = colors.blue },
+							StorageClass = { fg = colors.overlay2 },
+							Structure = { fg = colors.subtext0 },
+							Special = { fg = colors.overlay2 },
+							SpecialChar = { fg = colors.overlay2 },
+						}
+					end,
 				})
 				vim.cmd.colorscheme("catppuccin")
 				return theme
@@ -814,14 +814,32 @@ return {
 			-- while mason still only had pyright -> no python go-to-definition).
 			local ensure = {
 				-- lsp servers (must match vim.lsp.enable in the lspconfig block)
-				"gopls", "lua-language-server", "basedpyright", "ruff",
-				"html-lsp", "gradle-language-server", "omnisharp",
+				"gopls",
+				"lua-language-server",
+				"basedpyright",
+				"ruff",
+				"html-lsp",
+				"gradle-language-server",
+				"omnisharp",
 				-- debuggers
-				"debugpy", "netcoredbg", "delve", "go-debug-adapter",
+				"debugpy",
+				"netcoredbg",
+				"delve",
+				"go-debug-adapter",
 				-- formatters / linters
-				"black", "gofumpt", "goimports", "goimports-reviser", "golines",
-				"stylua", "prettierd", "yamlfmt", "yamllint", "htmlbeautifier", "jq",
-				"clangd", "cpptools",
+				"black",
+				"gofumpt",
+				"goimports",
+				"goimports-reviser",
+				"golines",
+				"stylua",
+				"prettierd",
+				"yamlfmt",
+				"yamllint",
+				"htmlbeautifier",
+				"jq",
+				"clangd",
+				"cpptools",
 			}
 			-- only auto-install in a real session, not headless (doctor/CI/`+Lazy! restore`),
 			-- where a +qa would abort mid-download and thrash on every invocation.
@@ -830,7 +848,9 @@ return {
 				registry.refresh(function()
 					for _, name in ipairs(ensure) do
 						local ok, pkg = pcall(registry.get_package, name)
-						if ok and not pkg:is_installed() then pkg:install() end
+						if ok and not pkg:is_installed() then
+							pkg:install()
+						end
 					end
 				end)
 			end

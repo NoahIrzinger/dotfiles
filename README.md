@@ -54,5 +54,5 @@ git clone https://github.com/NoahIrzinger/dotfiles ~/.dotfiles && ~/.dotfiles/in
 
 ## Security
 
-- downloads pinned + checksum-verified (mise, win32yank, TPM); versions in `mise.toml`.
+- downloads pinned + checksum-verified (mise, Android platform-tools, win32yank, TPM); tool versions in `mise.toml`.
 - secrets in `~/.shell.local` (gitignored).

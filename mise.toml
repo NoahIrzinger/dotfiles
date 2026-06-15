@@ -15,6 +15,8 @@ ripgrep   = "15"
 fd        = "10"
 jq        = "1.8"
 lazygit   = "0.62"
+shellcheck = "0.11"
+stylua     = "2.5"
 
 # languages
 go        = "1.26.4"
