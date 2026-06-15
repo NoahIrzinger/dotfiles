@@ -424,12 +424,19 @@ stow_one(){  # $1 = package
       else printf '%s\n' "$out" | grep -E 'LINK|MKDIR' | sed 's/^/   /' || echo "   would link $pkg"; fi
     else plan "stow $pkg (stow gets installed in step 1)"; fi
   else
-    stow -d "$REPO" -t "$HOME" --restow "$pkg"; echo "   stowed $pkg"
+    stow -d "$REPO" -t "$HOME" --restow "$pkg" && echo "   stowed $pkg"
   fi
 }
 
 for pkg in $PACKAGES; do
-  [ -d "$REPO/$pkg" ] && stow_one "$pkg" || echo "   skip missing package: $pkg"
+  if [ -d "$REPO/$pkg" ]; then
+    # `|| echo` keeps set -e from aborting the whole install when one package
+    # has a conflict; we report it and move on. stow_one ends in `stow && echo`
+    # so a failed link actually propagates here instead of being masked.
+    stow_one "$pkg" || echo "   ✗ $pkg failed to link (see log); continuing"
+  else
+    echo "   skip missing package: $pkg"
+  fi
 done
 [ "$DRY" = 0 ] && [ -d "$BK" ] && log "Backed up pre-existing files to $BK" || true
 
