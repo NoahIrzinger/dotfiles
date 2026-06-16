@@ -30,3 +30,9 @@ nvim/.config/nvim/.claude/
 
 # OS
 .DS_Store
+
+# pi packages: installed at runtime by `pi install`; track manifests only
+pi/.pi/agent/npm/node_modules/
+# pi runtime/private state
+pi/.pi/agent/auth.json
+pi/.pi/agent/sessions/

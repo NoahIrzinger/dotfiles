@@ -113,17 +113,39 @@ return {
 		},
 	},
 	{
+		"dmtrKovalenko/fff.nvim",
+		build = function()
+			-- Downloads a prebuilt fff binary, falling back to a cargo build.
+			require("fff.download").download_or_build_binary()
+		end,
+		lazy = false, -- fff lazy-initialises its Rust index internally.
+		opts = {
+			max_results = 100,
+			max_threads = 4,
+			lazy_sync = true,
+			preview = {
+				enabled = true,
+				line_numbers = true,
+			},
+			grep = {
+				max_file_size = 10 * 1024 * 1024,
+				max_matches_per_file = 100,
+				smart_case = true,
+				time_budget_ms = 150,
+				modes = { "plain", "regex", "fuzzy" },
+			},
+		},
+	},
+	{
 		"nvim-telescope/telescope.nvim",
 		cmd = "Telescope",
 		dependencies = {
 			"nvim-lua/plenary.nvim",
-			"nvim-telescope/telescope-live-grep-args.nvim",
 			{ "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
 		},
 		opts = function(_, opts)
 			local telescope = require("telescope")
 			telescope.load_extension("ui-select")
-			telescope.load_extension("live_grep_args")
 			telescope.load_extension("fzf")
 			opts.defaults = {
 				file_ignore_patterns = {

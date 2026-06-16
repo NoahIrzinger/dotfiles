@@ -3,6 +3,22 @@ vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 vim.opt.termguicolors = true
 
+-- When Neovim is launched outside an interactive shell, mise may not have
+-- populated PATH. Keep mise-managed tools like tree-sitter/node/jq visible to
+-- plugins that spawn external commands (kulala.nvim, mason, treesitter, etc.).
+do
+	local home = vim.fn.expand("~")
+	local paths = {
+		home .. "/.local/share/mise/shims",
+		home .. "/.local/bin",
+	}
+	for i = #paths, 1, -1 do
+		if vim.fn.isdirectory(paths[i]) == 1 and not vim.env.PATH:find(paths[i], 1, true) then
+			vim.env.PATH = paths[i] .. ":" .. vim.env.PATH
+		end
+	end
+end
+
 -- basic settings
 vim.wo.number = true
 

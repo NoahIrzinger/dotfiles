@@ -12,29 +12,26 @@ local function get_project_root()
 end
 
 set("n", "<leader>fp", function()
-	require("telescope.builtin").find_files({ cwd = get_project_root() })
-end, { desc = "Telescope Find Files In Closest Directory with .git" })
+	require("fff").find_files_in_dir(get_project_root())
+end, { desc = "FFF Find Files In Closest Git Root" })
 set("n", "<leader>fr", function()
-	require("telescope.builtin").find_files({ cwd = vim.fn.expand("~/src/http") })
-end, { desc = "Telescope Find HTTP Files in /src/requests" })
+	require("fff").find_files_in_dir(vim.fn.expand("~/src/http"))
+end, { desc = "FFF Find HTTP Files in ~/src/http" })
 set("n", "<leader>ff", function()
-	-- finder-agnostic: let telescope auto-detect fd / fdfind / rg and pass portable
-	-- opts, instead of hardcoding a binary name that breaks when it's absent/renamed.
-	require("telescope.builtin").find_files({ hidden = true, no_ignore = true })
-end, { desc = "Telescope Find Files Working Directory" })
---set("n", "<leader>ff", "<cmd>Telescope find_files hidden=true<cr>", { desc = "Telescope Find Files Working Directory" })
---set(
---	"n",
---	"<leader>fh",
---	"<cmd>cd ~ <cr> | <cmd>Telescope find_files hidden=true<cr>",
---	{ desc = "Telescope Find Files Home Directory" }
---)
---set("n", "<leader>fg", "<cmd>Telescope live_grep<cr>", { desc = "Telescope live grep" })
-set("n", "<leader>fq", ":lua require('telescope').extensions.live_grep_args.live_grep_args()<CR>")
--- advanced grep: search for `foo` then pass ripgrep args like `-tgo` or `--glob '*.lua'`
+	require("fff").find_files()
+end, { desc = "FFF Find Files Working Directory" })
 set("n", "<leader>fg", function()
-	require("telescope").extensions.live_grep_args.live_grep_args()
-end, { desc = "Telescope live grep with args" })
+	require("fff").live_grep()
+end, { desc = "FFF Live Grep" })
+set("n", "<leader>fz", function()
+	require("fff").live_grep({ grep = { modes = { "fuzzy", "plain" } } })
+end, { desc = "FFF Fuzzy Grep" })
+set("n", "<leader>fc", function()
+	require("fff").live_grep({ query = vim.fn.expand("<cword>") })
+end, { desc = "FFF Search Current Word" })
+set("n", "<leader>fs", function()
+	require("fff").scan_files()
+end, { desc = "FFF Rescan Files" })
 set("n", "<leader>fb", "<cmd>Telescope buffers<cr>", { desc = "Telescope buffers" })
 --set('n', '<leader>fh', "<cmd>Telescope help_tags<cr>", { desc = 'Telescope help tags' })
 

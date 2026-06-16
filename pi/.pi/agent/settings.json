@@ -1,0 +1,10 @@
+{
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.5",
+  "packages": [
+    "npm:pi-vim@0.12.1",
+    "npm:pi-web-access"
+  ],
+  "lastChangelogVersion": "0.79.4",
+  "theme": "dark"
+}

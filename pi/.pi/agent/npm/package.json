@@ -1,0 +1,8 @@
+{
+  "name": "pi-extensions",
+  "private": true,
+  "dependencies": {
+    "pi-vim": "0.12.1",
+    "pi-web-access": "^0.10.7"
+  }
+}
