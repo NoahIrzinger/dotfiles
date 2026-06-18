@@ -160,6 +160,10 @@ doctor(){
       row fail "neovim loads" "errors on startup (nvim --headless +qa)"
       printf '%s\n' "$out" | grep -E 'Error detected|E[0-9]{2,}:' | head -3 | sed 's/^/         /'
     fi
+    out="$(to 40 nvim --headless '+lua local missing={}; for _,c in ipairs({"fd","rg","fzf","tree-sitter","node"}) do if vim.fn.executable(c)==0 then table.insert(missing,c) end end; if #missing>0 then error("missing nvim PATH tools: "..table.concat(missing,",")) end' +qa 2>&1)"; rc=$?
+    [ "$rc" = 0 ] && row ok "nvim PATH" "fd rg fzf tree-sitter node" || { row fail "nvim PATH" "mise tools unavailable inside nvim"; printf '%s\n' "$out" | tail -3 | sed 's/^/         /'; }
+    out="$(to 50 nvim --headless '+checkhealth fff' '+w! /tmp/dotfiles-fff-health.txt' +qa >/dev/null 2>&1; cat /tmp/dotfiles-fff-health.txt 2>/dev/null)"; rc=$?
+    printf '%s' "$out" | grep -q 'Binary loaded successfully' && row ok "fff.nvim" "binary loaded" || row warn "fff.nvim" "binary not loaded; run :Lazy build fff.nvim"
   fi
 
   if command -v tmux >/dev/null 2>&1; then
@@ -283,7 +287,7 @@ if [ "$CONFIGS_ONLY" = 0 ]; then
     # for a custom source, "Clearsigned file isn't valid, got NOSPLIT"). the base
     # packages come from the main archives, so a failed index refresh must not abort.
     $SUDO apt-get update -qq || log "  apt update had errors (a third-party repo may be blocked); continuing"
-    $SUDO apt-get install -y git stow curl ca-certificates build-essential unzip
+    $SUDO apt-get install -y git stow curl ca-certificates build-essential pkg-config cmake unzip
   fi
 
   # ---- 1.5 corporate CA trust ----
@@ -415,6 +419,22 @@ else
     echo "   backed up $MISE_GLOBAL"
   fi
   ln -sf "$REPO/mise.toml" "$MISE_GLOBAL"
+fi
+
+# ---- Linux desktop / WSL env: GUI-launched apps do not read .bashrc/.zshrc. ----
+# Neovim also bootstraps PATH internally, but exporting this through systemd user
+# makes terminals, launchers, and editor integrations see mise/mason tools too.
+if [ "$OS" = linux ]; then
+  ENV_DIR="$HOME/.config/environment.d"
+  ENV_FILE="$ENV_DIR/10-dotfiles-path.conf"
+  ENV_PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$HOME/.local/share/nvim/mason/bin:$HOME/go/bin:$HOME/.dotfiles/themes:${PATH}"
+  if [ "$DRY" = 1 ]; then
+    plan "write $ENV_FILE with mise/mason/dotfiles PATH for GUI apps"
+  else
+    mkdir -p "$ENV_DIR"
+    printf 'PATH=%s\n' "$ENV_PATH" > "$ENV_FILE"
+    command -v systemctl >/dev/null 2>&1 && systemctl --user import-environment PATH >/dev/null 2>&1 || true
+  fi
 fi
 
 # ---- 4. stow configs (directory-level backup of anything that would collide) ----

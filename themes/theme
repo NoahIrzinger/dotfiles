@@ -3,7 +3,8 @@
 #
 #   theme list            list available themes (* = active)
 #   theme current         print the active theme name
-#   theme set <name>      activate <name> (regenerates tmux palette, reloads tmux live)
+#   theme set <name>      activate <name> (regenerates tmux + terminal palette, reloads live)
+#   theme terminal [name] apply only terminal emulator foreground/background colors
 #   theme next            rotate to the next theme (alphabetical)
 #   theme prev            rotate to the previous theme
 #   theme try <name>      experiment: snapshot the current theme, apply <name> live
@@ -15,7 +16,10 @@
 # a theme is themes/<name>.theme: a `flavour=` line plus the 26 catppuccin palette
 # slots as `name=hex` (no leading #). nvim and tmux both render through catppuccin,
 # so a theme is just a palette swap. nvim reads the active theme at startup; tmux
-# reads the generated ~/.config/tmux/theme.conf.
+# reads the generated ~/.config/tmux/theme.conf. the terminal emulator receives
+# OSC 10/11/12 color updates for the current tab/window when supported (works in
+# many native terminals and through WSL/Windows Terminal; tmux requires
+# allow-passthrough, set in this repo's tmux.conf).
 #
 # a theme may also ship themes/<name>.tmux: a custom status bar (e.g. a multi-row
 # header). `theme` copies it to ~/.config/tmux/theme-style.conf, which tmux.conf
@@ -34,6 +38,7 @@ TMUX_STYLE_OUT="$HOME/.config/tmux/theme-style.conf"
 STATUS_DEFAULT="$HOME/.config/tmux/.status-default.conf"
 # Remembers the theme to roll back to when experimenting via `theme try`.
 PREVIOUS_FILE="$HOME/.config/tmux/.theme-previous"
+PI_SETTINGS="$HOME/.pi/agent/settings.json"
 
 # palette slot (our name) -> tmux @thm_ variable suffix
 SLOTS=(
@@ -61,6 +66,74 @@ slot_var() {  # $1 = palette slot name -> @thm_ variable suffix (empty if not a 
   for pair in "${SLOTS[@]}"; do
     [ "${pair%%=*}" = "$1" ] && { printf '%s' "${pair#*=}"; return; }
   done
+}
+
+theme_slot() {  # $1 = .theme file, $2 = slot name -> six hex digits
+  local file="$1" want="$2" line key val
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%%#*}"
+    case "$line" in *=*) ;; *) continue ;; esac
+    key="${line%%=*}"; val="${line#*=}"
+    key="${key//[[:space:]]/}"; val="${val//[[:space:]]/}"
+    [ "$key" = "$want" ] || continue
+    case "$val" in *[!0-9a-fA-F]*|"") return 1 ;; esac
+    [ "${#val}" -eq 6 ] || return 1
+    printf '%s' "$val"
+    return 0
+  done < "$file"
+  return 1
+}
+
+terminal_osc_payload() {  # $1 = .theme file -> OSC fg/bg/cursor sequences
+  local file="$1" fg bg cursor
+  fg="$(theme_slot "$file" text || true)"
+  bg="$(theme_slot "$file" base || true)"
+  cursor="$(theme_slot "$file" peach || true)"
+  [ -n "$fg" ] && [ -n "$bg" ] || return 0
+  [ -n "$cursor" ] || cursor="$fg"
+  # OSC 10 = foreground, 11 = background, 12 = cursor. Supported by iTerm2,
+  # kitty, WezTerm, many xterm-compatible terminals, and current Windows Terminal.
+  printf '\033]10;#%s\007\033]11;#%s\007\033]12;#%s\007' "$fg" "$bg" "$cursor"
+}
+
+apply_terminal() {  # $1 = .theme file; current terminal tab/window only
+  # Only emit escape sequences when invoked from an interactive terminal/tmux pane.
+  [ -t 1 ] || return 0
+  local payload esc
+  payload="$(terminal_osc_payload "$1")"
+  [ -n "$payload" ] || return 0
+  if [ -n "${TMUX:-}" ]; then
+    # tmux passthrough DCS; inner ESC bytes must be doubled for tmux.
+    esc=$'\033'
+    payload="${payload//$esc/$esc$esc}"
+    printf '\033Ptmux;\033%s\033\\' "$payload"
+  else
+    printf '%s' "$payload"
+  fi
+}
+
+pi_theme_for() {  # $1 = theme name -> pi theme name
+  case "$1" in
+    light) echo "dotfiles-light" ;;
+    *)     echo "dotfiles-dark" ;;
+  esac
+}
+
+update_pi_theme() {  # $1 = theme name; best-effort update of pi settings.json
+  local pi_theme; pi_theme="$(pi_theme_for "$1")"
+  [ -f "$PI_SETTINGS" ] || return 0
+  command -v python3 >/dev/null 2>&1 || return 0
+  PI_SETTINGS="$PI_SETTINGS" PI_THEME="$pi_theme" python3 - <<'PY' >/dev/null 2>&1 || true
+import json, os
+path = os.environ["PI_SETTINGS"]
+theme = os.environ["PI_THEME"]
+with open(path) as f:
+    data = json.load(f)
+data["theme"] = theme
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PY
 }
 
 gen_tmux() {  # $1 = .theme file; $2 = output path (default $TMUX_CONF_OUT)
@@ -156,10 +229,22 @@ cmd_set() {
   gen_tmux "$file"
   gen_style "$name"
   reload_tmux
+  apply_terminal "$file"
+  update_pi_theme "$name"
   reload_nvim
   echo "theme -> $name"
   echo "  tmux: palette regenerated$(tmux list-sessions >/dev/null 2>&1 && echo ' + reloaded live' || true)"
   echo "  nvim: applies on next launch (or :ThemeReload in a running instance)"
+  echo "  pi: settings theme -> $(pi_theme_for "$name") (restart pi or /reload if already running)"
+}
+
+cmd_terminal() {  # apply terminal emulator colors without changing active theme
+  local name="${1:-$(active_name)}"
+  [ -n "$name" ] || { echo "usage: theme terminal <name>" >&2; exit 1; }
+  local file="$THEMES_DIR/$name.theme"
+  [ -f "$file" ] || { echo "no such theme: $name" >&2; exit 1; }
+  apply_terminal "$file"
+  echo "terminal colors -> $name"
 }
 
 cmd_preview() {  # render a theme's status bar to a PNG (design tool for custom headers)
@@ -236,6 +321,7 @@ case "${1:-list}" in
     ;;
   current|active) active_name ;;
   set|use) shift; cmd_set "${1:-}" ;;
+  terminal|term) shift; cmd_terminal "${1:-}" ;;
   next)    cmd_rotate next ;;
   prev|previous) cmd_rotate prev ;;
   try)     shift; cmd_try "${1:-}" ;;

@@ -122,7 +122,7 @@ return {
 		opts = {
 			max_results = 100,
 			max_threads = 4,
-			lazy_sync = true,
+			lazy_sync = false,
 			preview = {
 				enabled = true,
 				line_numbers = true,
@@ -479,8 +479,16 @@ return {
 					},
 				},
 			})
+			vim.lsp.config("ts_ls", {
+				capabilities = capabilities,
+				settings = {},
+			})
+			vim.lsp.config("clangd", {
+				capabilities = capabilities,
+				settings = {},
+			})
 
-			vim.lsp.enable({ "gopls", "html", "gradle_ls", "lua_ls", "basedpyright", "ruff", "omnisharp" })
+			vim.lsp.enable({ "gopls", "html", "gradle_ls", "lua_ls", "basedpyright", "ruff", "omnisharp", "ts_ls", "clangd" })
 
 			---- TODO where is lemminx from?
 			--lspconfig.lemminx.setup({
@@ -843,6 +851,8 @@ return {
 				"html-lsp",
 				"gradle-language-server",
 				"omnisharp",
+				"typescript-language-server",
+				"clangd",
 				-- debuggers
 				"debugpy",
 				"netcoredbg",
@@ -860,7 +870,6 @@ return {
 				"yamllint",
 				"htmlbeautifier",
 				"jq",
-				"clangd",
 				"cpptools",
 			}
 			-- only auto-install in a real session, not headless (doctor/CI/`+Lazy! restore`),

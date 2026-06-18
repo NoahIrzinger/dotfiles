@@ -28,7 +28,8 @@ Generated (not edited by hand), under `~/.config/tmux/`:
 
 ```
 theme list            list themes (* = active)
-theme set <name>      activate <name> (regenerates palette + reloads tmux/nvim live)
+theme set <name>      activate <name> (regenerates palette + reloads tmux/nvim/terminal, updates pi)
+theme terminal [name] apply only terminal emulator foreground/background colors
 theme next / prev     rotate alphabetically
 theme try <name>      experiment: snapshot the current theme, apply <name> live
 theme back            roll back to the theme before the last `try`
@@ -36,6 +37,25 @@ theme refresh         fast re-apply of the active header after editing its .tmux
 theme reset           restore the default single-row bar (undo a stuck custom header)
 theme preview [name]  render the theme's bar to a PNG and open it
 ```
+
+## Terminal emulator colors
+
+`theme set` also emits OSC 10/11/12 escape sequences for the current terminal
+window/tab, so supported terminal emulators follow the same palette. This also
+works from WSL when the host terminal supports those OSC color controls (for
+example current Windows Terminal). Inside tmux, passthrough is enabled by this
+repo's `tmux.conf`.
+
+Use `theme terminal [name]` to re-apply only the terminal colors without changing
+the active theme.
+
+## Pi coding-agent theme
+
+Custom pi themes live in `pi/.pi/agent/themes/` and are exposed at
+`~/.pi/agent/themes` via symlink. `theme set light` writes
+`"theme": "dotfiles-light"` to `~/.pi/agent/settings.json`; other themes map to
+`dotfiles-dark`. Restart pi or run `/reload` in an existing session if the theme
+does not update immediately.
 
 ## Experiment loop (live, with rollback)
 

@@ -11,6 +11,9 @@ do
 	local paths = {
 		home .. "/.local/share/mise/shims",
 		home .. "/.local/bin",
+		home .. "/.local/share/nvim/mason/bin",
+		home .. "/go/bin",
+		home .. "/.dotfiles/themes",
 	}
 	for i = #paths, 1, -1 do
 		if vim.fn.isdirectory(paths[i]) == 1 and not vim.env.PATH:find(paths[i], 1, true) then
