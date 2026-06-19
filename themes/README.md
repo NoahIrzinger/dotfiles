@@ -28,8 +28,9 @@ Generated (not edited by hand), under `~/.config/tmux/`:
 
 ```
 theme list            list themes (* = active)
-theme set <name>      activate <name> (regenerates palette + reloads tmux/nvim/terminal, updates pi)
+theme set <name>      activate <name> (regenerates palette + reloads tmux/nvim/terminal, updates pi/Claude)
 theme terminal [name] apply only terminal emulator foreground/background colors
+theme bg [name]       re-apply terminal/Windows Terminal/Claude backgrounds
 theme next / prev     rotate alphabetically
 theme try <name>      experiment: snapshot the current theme, apply <name> live
 theme back            roll back to the theme before the last `try`
@@ -49,13 +50,21 @@ repo's `tmux.conf`.
 Use `theme terminal [name]` to re-apply only the terminal colors without changing
 the active theme.
 
+`theme bg [name]` is the startup-friendly variant used by the shell config: it
+re-applies terminal OSC colors and best-effort host app backgrounds. In WSL it
+also updates Windows Terminal `profiles.defaults.background` when the settings
+file is reachable under `/mnt/c/Users/...`. It also copies the matching Claude
+Code custom theme into `~/.claude/themes/` and writes the selected theme to
+`~/.claude/settings.json`.
+
 ## Pi coding-agent theme
 
 Custom pi themes live in `pi/.pi/agent/themes/` and are exposed at
 `~/.pi/agent/themes` via symlink. `theme set light` writes
 `"theme": "dotfiles-light"` to `~/.pi/agent/settings.json`; other themes map to
 `dotfiles-dark`. Restart pi or run `/reload` in an existing session if the theme
-does not update immediately.
+does not update immediately. Claude Code uses matching theme files from
+`themes/claude/`.
 
 ## Experiment loop (live, with rollback)
 

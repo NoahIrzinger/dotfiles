@@ -1,0 +1,26 @@
+{
+  "name": "dotfiles-dark",
+  "type": "dark",
+  "colors": {
+    "background": "#1e1e1e",
+    "foreground": "#ffffff",
+    "selection": "#3e3e3e",
+    "cursor": "#ffa348",
+    "black": "#101010",
+    "red": "#e01b24",
+    "green": "#33d17a",
+    "yellow": "#f5c211",
+    "blue": "#62a0ea",
+    "magenta": "#c061cb",
+    "cyan": "#54dbf6",
+    "white": "#deddda",
+    "brightBlack": "#616161",
+    "brightRed": "#f66151",
+    "brightGreen": "#33d17a",
+    "brightYellow": "#f5c211",
+    "brightBlue": "#62a0ea",
+    "brightMagenta": "#c061cb",
+    "brightCyan": "#54dbf6",
+    "brightWhite": "#ffffff"
+  }
+}

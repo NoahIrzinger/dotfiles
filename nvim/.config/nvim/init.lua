@@ -15,10 +15,21 @@ do
 		home .. "/go/bin",
 		home .. "/.dotfiles/themes",
 	}
-	for i = #paths, 1, -1 do
-		if vim.fn.isdirectory(paths[i]) == 1 and not vim.env.PATH:find(paths[i], 1, true) then
-			vim.env.PATH = paths[i] .. ":" .. vim.env.PATH
+	local function path_prepend(dir)
+		if vim.fn.isdirectory(dir) ~= 1 then
+			return
 		end
+		local kept = {}
+		for _, part in ipairs(vim.split(vim.env.PATH or "", ":", { plain = true, trimempty = true })) do
+			if part ~= dir then
+				table.insert(kept, part)
+			end
+		end
+		table.insert(kept, 1, dir)
+		vim.env.PATH = table.concat(kept, ":")
+	end
+	for i = #paths, 1, -1 do
+		path_prepend(paths[i])
 	end
 end
 

@@ -5,6 +5,7 @@
 #   theme current         print the active theme name
 #   theme set <name>      activate <name> (regenerates tmux + terminal palette, reloads live)
 #   theme terminal [name] apply only terminal emulator foreground/background colors
+#   theme bg [name]       re-apply terminal/Windows Terminal/Claude backgrounds
 #   theme next            rotate to the next theme (alphabetical)
 #   theme prev            rotate to the previous theme
 #   theme try <name>      experiment: snapshot the current theme, apply <name> live
@@ -110,6 +111,73 @@ apply_terminal() {  # $1 = .theme file; current terminal tab/window only
   else
     printf '%s' "$payload"
   fi
+}
+
+set_term_bg() { apply_terminal "$1"; }
+
+theme_flavour() {  # $1 = .theme file -> latte/mocha/etc.
+  local line key val
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%%#*}"
+    case "$line" in *=*) ;; *) continue ;; esac
+    key="${line%%=*}"; val="${line#*=}"
+    key="${key//[[:space:]]/}"; val="${val//[[:space:]]/}"
+    [ "$key" = flavour ] && { printf '%s' "$val"; return 0; }
+  done < "$1"
+  printf 'mocha'
+}
+
+wt_settings_path() {
+  if [ -n "${WT_SETTINGS:-}" ]; then echo "$WT_SETTINGS"; return; fi
+  if grep -qi microsoft /proc/version 2>/dev/null; then
+    local base="/mnt/c/Users/${WINUSER:-${USER}}/AppData/Local/Packages"
+    local p
+    for p in "$base"/Microsoft.WindowsTerminal_*/LocalState/settings.json; do
+      [ -f "$p" ] && { echo "$p"; return; }
+    done
+  fi
+}
+
+set_wt_bg() {  # $1 = .theme file; best-effort Windows Terminal default background
+  local file="$1" bg path
+  bg="$(theme_slot "$file" base || true)"
+  path="$(wt_settings_path || true)"
+  [ -n "$bg" ] && [ -f "$path" ] && command -v python3 >/dev/null 2>&1 || return 0
+  WT_SETTINGS="$path" WT_BG="#$bg" python3 - <<'PY' >/dev/null 2>&1 || true
+import json, os
+path = os.environ["WT_SETTINGS"]
+bg = os.environ["WT_BG"]
+with open(path, encoding="utf-8-sig") as f:
+    data = json.load(f)
+profiles = data.setdefault("profiles", {})
+defaults = profiles.setdefault("defaults", {})
+defaults["background"] = bg
+with open(path, "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=4)
+    f.write("\n")
+PY
+}
+
+set_claude_theme() {  # $1 = .theme file, $2 = theme name
+  local file="$1" name="$2" claude_theme
+  claude_theme="$(pi_theme_for "$name")"
+  mkdir -p "$HOME/.claude/themes"
+  [ -f "$THEMES_DIR/claude/${claude_theme}.json" ] && cp "$THEMES_DIR/claude/${claude_theme}.json" "$HOME/.claude/themes/${claude_theme}.json" || true
+  command -v python3 >/dev/null 2>&1 || return 0
+  CLAUDE_SETTINGS="$HOME/.claude/settings.json" CLAUDE_THEME="$claude_theme" python3 - <<'PY' >/dev/null 2>&1 || true
+import json, os
+path = os.environ["CLAUDE_SETTINGS"]
+theme = os.environ["CLAUDE_THEME"]
+try:
+    with open(path) as f:
+        data = json.load(f)
+except Exception:
+    data = {}
+data["theme"] = theme
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+PY
 }
 
 pi_theme_for() {  # $1 = theme name -> pi theme name
@@ -229,13 +297,17 @@ cmd_set() {
   gen_tmux "$file"
   gen_style "$name"
   reload_tmux
-  apply_terminal "$file"
+  set_term_bg "$file"
+  set_wt_bg "$file"
   update_pi_theme "$name"
+  set_claude_theme "$file" "$name"
   reload_nvim
   echo "theme -> $name"
   echo "  tmux: palette regenerated$(tmux list-sessions >/dev/null 2>&1 && echo ' + reloaded live' || true)"
   echo "  nvim: applies on next launch (or :ThemeReload in a running instance)"
   echo "  pi: settings theme -> $(pi_theme_for "$name") (restart pi or /reload if already running)"
+  echo "  terminal: current tab/window background updated when supported"
+  echo "  claude: settings theme -> $(pi_theme_for "$name")"
 }
 
 cmd_terminal() {  # apply terminal emulator colors without changing active theme
@@ -243,8 +315,18 @@ cmd_terminal() {  # apply terminal emulator colors without changing active theme
   [ -n "$name" ] || { echo "usage: theme terminal <name>" >&2; exit 1; }
   local file="$THEMES_DIR/$name.theme"
   [ -f "$file" ] || { echo "no such theme: $name" >&2; exit 1; }
-  apply_terminal "$file"
+  set_term_bg "$file"
   echo "terminal colors -> $name"
+}
+
+cmd_bg() {  # re-apply current terminal + host app backgrounds for active/current theme
+  local name="${1:-$(active_name)}"
+  [ -n "$name" ] || { echo "usage: theme bg [name]" >&2; exit 1; }
+  local file="$THEMES_DIR/$name.theme"
+  [ -f "$file" ] || { echo "no such theme: $name" >&2; exit 1; }
+  set_term_bg "$file"
+  set_wt_bg "$file"
+  set_claude_theme "$file" "$name"
 }
 
 cmd_preview() {  # render a theme's status bar to a PNG (design tool for custom headers)
@@ -322,6 +404,7 @@ case "${1:-list}" in
   current|active) active_name ;;
   set|use) shift; cmd_set "${1:-}" ;;
   terminal|term) shift; cmd_terminal "${1:-}" ;;
+  bg|background) shift; cmd_bg "${1:-}" ;;
   next)    cmd_rotate next ;;
   prev|previous) cmd_rotate prev ;;
   try)     shift; cmd_try "${1:-}" ;;

@@ -2,6 +2,12 @@
 .shell.local
 .bashrc.local
 .npmrc.local
+# Claude settings can contain client-specific MCPs, plugins, permissions, and
+# internal marketplace paths. Keep real settings local; use a template if needed.
+.claude/settings.json
+.claude/settings.local.json
+claude/.claude/settings.json
+claude/.claude/settings.local.json
 *.pem
 *.keystore
 

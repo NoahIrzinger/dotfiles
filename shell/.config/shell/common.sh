@@ -186,6 +186,13 @@ case "$-" in *i*)  # interactive only: skip in scripts/CI
   fi
 ;; esac
 
+# Re-apply terminal/host background for the active dotfiles theme on interactive
+# shell startup. This catches new WSL/Windows Terminal tabs and terminals opened
+# after `theme set` changed the active palette.
+case "$-" in *i*)
+  command -v theme >/dev/null 2>&1 && theme bg >/dev/null 2>&1 || true
+;; esac
+
 # --- machine-local overrides (untracked) ---
 [ -f "$HOME/.shell.local" ] && . "$HOME/.shell.local"
 

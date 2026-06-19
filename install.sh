@@ -166,6 +166,11 @@ doctor(){
     printf '%s' "$out" | grep -q 'Binary loaded successfully' && row ok "fff.nvim" "binary loaded" || row warn "fff.nvim" "binary not loaded; run :Lazy build fff.nvim"
   fi
 
+  if command -v dlv >/dev/null 2>&1; then
+    out="$(dlv version 2>/dev/null | awk '/Version:/ {print $2; exit}')"
+    case "$out" in 1.26.*|1.27.*|1.28.*|1.29.*) row ok "delve" "$out" ;; *) row warn "delve" "old version: ${out:-unknown}; run mise install" ;; esac
+  fi
+
   if command -v tmux >/dev/null 2>&1; then
     local sock="doc$$"
     to 10 tmux -L "$sock" -f "$HOME/.config/tmux/tmux.conf" new-session -d 2>/dev/null \

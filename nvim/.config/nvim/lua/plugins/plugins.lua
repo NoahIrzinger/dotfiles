@@ -97,12 +97,32 @@ return {
 	},
 	{
 		"nvim-treesitter/nvim-treesitter",
+		branch = "master",
 		build = ":TSUpdate",
-		opts = function(_, opts)
-			opts.auto_install = true
-			opts.highlight = { enable = true }
-			opts.indent = { enable = true }
-		end,
+		main = "nvim-treesitter.configs",
+		opts = {
+			auto_install = true,
+			ensure_installed = {
+				"http",
+				"json",
+				"graphql",
+				"lua",
+				"go",
+				"gomod",
+				"gosum",
+				"python",
+				"typescript",
+				"javascript",
+				"tsx",
+				"bash",
+				"yaml",
+				"toml",
+				"markdown",
+				"markdown_inline",
+			},
+			highlight = { enable = true },
+			indent = { enable = true },
+		},
 	},
 	{
 		"nvim-lualine/lualine.nvim",
@@ -423,6 +443,10 @@ return {
 				capabilities = capabilities,
 				settings = {},
 			})
+			vim.lsp.config("htmx", {
+				capabilities = capabilities,
+				settings = {},
+			})
 			vim.lsp.config("gradle_ls", {
 				capabilities = capabilities,
 				settings = {},
@@ -488,7 +512,7 @@ return {
 				settings = {},
 			})
 
-			vim.lsp.enable({ "gopls", "html", "gradle_ls", "lua_ls", "basedpyright", "ruff", "omnisharp", "ts_ls", "clangd" })
+			vim.lsp.enable({ "gopls", "html", "htmx", "gradle_ls", "lua_ls", "basedpyright", "ruff", "omnisharp", "ts_ls", "clangd" })
 
 			---- TODO where is lemminx from?
 			--lspconfig.lemminx.setup({
@@ -750,7 +774,19 @@ return {
 		config = function()
 			local dap = require("dap")
 			local dap_go = require("dap-go")
+			local dlv = vim.fn.expand("~/.local/share/mise/shims/dlv")
+			if vim.fn.executable(dlv) ~= 1 then
+				dlv = vim.fn.exepath("dlv")
+			end
+			if dlv == "" then
+				dlv = "dlv"
+			end
 			dap_go.setup({
+				delve = {
+					-- Prefer mise-managed Delve over Mason's package. Mason can lag the
+					-- installed Go toolchain and fail with "Delve is too old".
+					path = dlv,
+				},
 				dap_configurations = {
 					{
 						type = "go",
@@ -834,30 +870,16 @@ return {
 	},
 	-- package management
 	{
-		"williamboman/mason.nvim",
+		"mason-org/mason.nvim",
 		lazy = false,
 		config = function()
 			require("mason").setup()
-			-- declare every tool the config uses, so a fresh or drifted machine installs
-			-- them. without this, servers were hand-installed via :Mason and silently
-			-- drifted from what the config enables (e.g. config switched to basedpyright
-			-- while mason still only had pyright -> no python go-to-definition).
+			-- Non-LSP tools. LSP server installation is declared in mason-lspconfig
+			-- below using lspconfig server names.
 			local ensure = {
-				-- lsp servers (must match vim.lsp.enable in the lspconfig block)
-				"gopls",
-				"lua-language-server",
-				"basedpyright",
-				"ruff",
-				"html-lsp",
-				"gradle-language-server",
-				"omnisharp",
-				"typescript-language-server",
-				"clangd",
 				-- debuggers
 				"debugpy",
 				"netcoredbg",
-				"delve",
-				"go-debug-adapter",
 				-- formatters / linters
 				"black",
 				"gofumpt",
@@ -886,6 +908,25 @@ return {
 				end)
 			end
 		end,
+	},
+	{
+		"mason-org/mason-lspconfig.nvim",
+		dependencies = { "mason-org/mason.nvim", "neovim/nvim-lspconfig" },
+		opts = {
+			ensure_installed = {
+				"gopls",
+				"html",
+				"htmx",
+				"gradle_ls",
+				"lua_ls",
+				"basedpyright",
+				"ruff",
+				"omnisharp",
+				"ts_ls",
+				"clangd",
+			},
+			automatic_enable = false,
+		},
 	},
 
 	-- coding helpers

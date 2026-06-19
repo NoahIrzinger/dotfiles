@@ -68,11 +68,7 @@ set(
 	{ noremap = true, desc = "Debugger Test Nearest Method (Unit Test)" }
 )
 set("n", "<leader>ds", "<cmd>lua require('dap').terminate()<cr>", { noremap = true, desc = "Debugger Terminate" })
--- check for vscode launch.json files first when debugger starts
 set("n", "<leader>dc", function()
-	if vim.fn.filereadable(".vscode/launch.json") then
-		require("dap.ext.vscode").load_launchjs(nil, {})
-	end
 	require("dap").continue()
 end, { noremap = true, desc = "Debugger Continue" })
 set("n", "<leader>do", "<cmd>lua require('dap').step_over()<cr>", { noremap = true, desc = "Debugger Step Over" })
