@@ -1,0 +1,35 @@
+# mobile-dark: mobile-optimized dark palette copied from dark; custom dark theme for dim environments
+# Transcribed from the original nvim color_overrides block. GNOME/Adwaita-ish.
+flavour=mocha
+
+# accents
+rosewater=f66151
+flamingo=c061cb
+pink=c061cb
+mauve=c061cb
+red=e01b24
+maroon=f66151
+peach=ffa348
+yellow=f5c211
+green=33d17a
+teal=54dbf6
+sky=62a0ea
+sapphire=62a0ea
+blue=62a0ea
+lavender=c061cb
+
+# text
+text=ffffff
+subtext1=deddda
+subtext0=c0bfbc
+
+# overlays / surfaces / structure
+overlay2=858585
+overlay1=737373
+overlay0=616161
+surface2=4f4f4f
+surface1=3e3e3e
+surface0=2e2e2e
+base=1e1e1e
+mantle=1a1a1a
+crust=101010

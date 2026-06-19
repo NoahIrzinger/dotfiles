@@ -182,8 +182,8 @@ PY
 
 pi_theme_for() {  # $1 = theme name -> pi theme name
   case "$1" in
-    light) echo "dotfiles-light" ;;
-    *)     echo "dotfiles-dark" ;;
+    light|mobile-light) echo "dotfiles-light" ;;
+    *)                  echo "dotfiles-dark" ;;
   esac
 }
 

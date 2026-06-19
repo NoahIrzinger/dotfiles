@@ -39,6 +39,31 @@ theme reset           restore the default single-row bar (undo a stuck custom he
 theme preview [name]  render the theme's bar to a PNG and open it
 ```
 
+## Mobile themes
+
+`mobile-dark` and `mobile-light` are optimized for phone SSH clients such as Echo:
+
+- one-row status bar
+- ASCII-only labels, no Nerd Font icons or powerline separators
+- short left/right sections to avoid wrapping on narrow terminals
+- no CPU/RAM/IP/Kubernetes modules in the status line
+
+Use them on small screens with:
+
+```sh
+theme set mobile-dark
+# or
+theme set mobile-light
+```
+
+Switch back on desktop with:
+
+```sh
+theme set dark
+# or
+theme set light
+```
+
 ## Terminal emulator colors
 
 `theme set` also emits OSC 10/11/12 escape sequences for the current terminal
