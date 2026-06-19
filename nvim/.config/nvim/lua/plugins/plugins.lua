@@ -512,7 +512,18 @@ return {
 				settings = {},
 			})
 
-			vim.lsp.enable({ "gopls", "html", "htmx", "gradle_ls", "lua_ls", "basedpyright", "ruff", "omnisharp", "ts_ls", "clangd" })
+			vim.lsp.enable({
+				"gopls",
+				"html",
+				"htmx",
+				"gradle_ls",
+				"lua_ls",
+				"basedpyright",
+				"ruff",
+				"omnisharp",
+				"ts_ls",
+				"clangd",
+			})
 
 			---- TODO where is lemminx from?
 			--lspconfig.lemminx.setup({

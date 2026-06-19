@@ -8,11 +8,20 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.3
+        with:
+          # For PRs, check out the source branch. Same-repo PRs (Renovate) can
+          # then receive a formatter cleanup commit before linting fails.
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
 
       - uses: jdx/mise-action@v3.6.3
         with:
@@ -21,11 +30,21 @@ jobs:
       - name: install lint tools
         run: mise install -y shellcheck stylua
 
+      - name: format lua
+        run: stylua nvim/.config/nvim
+
+      - name: commit lua formatting fixes
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: stefanzweifel/git-auto-commit-action@v6.0.1
+        with:
+          commit_message: "style: format lua with stylua"
+          file_pattern: nvim/.config/nvim/**/*.lua
+
+      - name: assert lua formatting
+        run: git diff --exit-code -- nvim/.config/nvim
+
       - name: shellcheck
         run: shellcheck --severity=warning install.sh link.sh uninstall.sh themes/theme wsl/wsl-optimize.sh
-
-      - name: stylua
-        run: stylua --check nvim/.config/nvim
 
   install:
     strategy:

@@ -31,9 +31,12 @@ local function select_file_fallback(cwd)
 				notify("no files found under " .. cwd)
 				return
 			end
-			vim.ui.select(files, { prompt = "Files", format_item = function(item)
-				return vim.fn.fnamemodify(item, ":~:.")
-			end }, function(choice)
+			vim.ui.select(files, {
+				prompt = "Files",
+				format_item = function(item)
+					return vim.fn.fnamemodify(item, ":~:.")
+				end,
+			}, function(choice)
 				if choice then
 					vim.cmd.edit(vim.fn.fnameescape(choice))
 				end
