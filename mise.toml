@@ -48,7 +48,7 @@ helm      = "4"
 # below (whose npm wrappers need a postinstall mise skips). same exact-pin rule
 # as codex: an exact version is a filesystem check, not a proxy-hanging registry
 # query. bump with `mise use npm:@earendil-works/pi-coding-agent@<ver>`.
-"npm:@earendil-works/pi-coding-agent" = "0.79.8"
+"npm:@earendil-works/pi-coding-agent" = "0.79.9"
 
 # claude + opencode ship native binaries; their npm packages are thin downloaders
 # whose postinstall mise's npm backend skips (the wrapper then errors "native binary
