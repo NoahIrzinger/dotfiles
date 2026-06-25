@@ -3,6 +3,6 @@
   "private": true,
   "dependencies": {
     "pi-vim": "0.12.1",
-    "pi-web-access": "0.12.0"
+    "pi-web-access": "0.13.0"
   }
 }
