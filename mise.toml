@@ -19,7 +19,7 @@ shellcheck = "0.11"
 stylua     = "2.5"
 # kulala.nvim builds its own http parser at setup via the `tree-sitter` CLI
 # (tree-sitter build -o ...); without it nvim throws ENOENT 'tree-sitter'.
-tree-sitter = "0.26.9"
+tree-sitter = "0.26.10"
 
 # languages
 go        = "1.26.4"
