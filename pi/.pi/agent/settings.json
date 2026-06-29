@@ -3,8 +3,10 @@
   "defaultModel": "gpt-5.5",
   "packages": [
     "npm:pi-vim@0.12.1",
-    "npm:pi-web-access"
+    "npm:pi-web-access",
+    "npm:pi-subagents"
   ],
   "lastChangelogVersion": "0.79.7",
-  "theme": "dotfiles-light"
+  "theme": "dotfiles-dark",
+  "defaultThinkingLevel": "xhigh"
 }

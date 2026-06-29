@@ -50,6 +50,12 @@ helm      = "4"
 # query. bump with `mise use npm:@earendil-works/pi-coding-agent@<ver>`.
 "npm:@earendil-works/pi-coding-agent" = "0.80.2"
 
+# gemini (google) is pure-JS too: bin is bundle/gemini.js, no os/cpu pin, no
+# postinstall. npm backend works cleanly like codex/pi above. same exact-pin
+# rule: an exact version is a filesystem check, not a proxy-hanging registry
+# query. bump with `mise use npm:@google/gemini-cli@<ver>`.
+"npm:@google/gemini-cli" = "0.49.0"
+
 # claude + opencode ship native binaries; their npm packages are thin downloaders
 # whose postinstall mise's npm backend skips (the wrapper then errors "native binary
 # not installed"). use the aqua backend, which fetches the real release binary.

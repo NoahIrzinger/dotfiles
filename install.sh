@@ -408,6 +408,20 @@ else
   export PATH="$SHIMS:$HOME/.local/bin:$PATH"
 fi
 
+# ---- 3.6 claude: satisfy `/doctor` and the native `claude install` path check ----
+# claude is mise-managed (pinned in mise.toml, self-update off), so the official
+# installer's location ~/.local/bin/claude is empty and `claude /doctor` reports
+# "command missing or broken". point it at the mise shim (stable across version
+# bumps, unlike the versioned install dir) so the check passes. resolution is
+# unaffected: the mise install dir + shims already precede ~/.local/bin on PATH.
+if [ "$DRY" = 1 ]; then
+  plan "link ~/.local/bin/claude -> mise shim (silence claude /doctor)"
+elif [ -e "$SHIMS/claude" ]; then
+  mkdir -p "$HOME/.local/bin"
+  ln -sfn "$SHIMS/claude" "$HOME/.local/bin/claude" \
+    && log "Linked ~/.local/bin/claude -> mise shim"
+fi
+
 # ---- make the repo's toolset the GLOBAL mise config (tools active in every dir,
 #      not just inside the repo) ----
 BK="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
