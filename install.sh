@@ -295,6 +295,18 @@ if [ "$CONFIGS_ONLY" = 0 ]; then
     $SUDO apt-get install -y git stow curl ca-certificates build-essential pkg-config cmake unzip
   fi
 
+  # dtach: ad-hoc session-detach util, NOT on the critical path. keep it out of the
+  # batch above and install it non-fatally: it's Debian main but Ubuntu `universe`
+  # (absent on minimal images), and under `set -e` a single unlocatable package would
+  # fail the whole apt-get call and abort the bootstrap. degrade to "skipped" instead.
+  if [ "$DRY" = 1 ]; then
+    plan "$([ "$OS" = macos ] && echo 'brew install dtach' || echo 'apt-get install dtach') (optional, non-fatal)"
+  elif [ "$OS" = macos ]; then
+    brew install dtach || log "  dtach unavailable via brew; skipping"
+  else
+    $SUDO apt-get install -y dtach || log "  dtach unavailable (Ubuntu needs 'universe'); skipping"
+  fi
+
   # ---- 1.5 corporate CA trust ----
   # build + export the CA bundle BEFORE installing tools, so npm/pip/codex don't die
   # on UNABLE_TO_GET_ISSUER_CERT_LOCALLY behind an SSL-inspecting proxy. drop the

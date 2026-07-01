@@ -26,7 +26,10 @@ go        = "1.26.4"
 # Delve must track the Go toolchain closely. Mason's delve can lag and Go will
 # reject old debuggers at launch ("version of Delve is too old"). Keep dlv in
 # mise so it wins PATH before Mason's bin.
-"aqua:go-delve/delve" = "1.27.0"
+# held at 1.26.3: the v1.27.0 GitHub release ships zero binary assets, so the aqua
+# backend has nothing to download ("no asset found"). bump once upstream attaches
+# darwin/linux binaries again (Renovate will re-propose it).
+"aqua:go-delve/delve" = "1.26.3"
 python    = "3.14.6"
 node      = "24.18.0"
 "go:github.com/air-verse/air" = "1.65.3"
