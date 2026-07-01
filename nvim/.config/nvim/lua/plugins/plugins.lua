@@ -97,12 +97,22 @@ return {
 	},
 	{
 		"nvim-treesitter/nvim-treesitter",
-		branch = "master",
+		-- The `master` branch is EOL and crashes injection parsing on Neovim 0.11+
+		-- (its query predicates use the pre-0.10 match API), which breaks code-block
+		-- highlighting and any plugin that calls parse(true) (e.g. markview). `main`
+		-- is the rewrite that targets Neovim 0.12+.
+		branch = "main",
+		lazy = false, -- main does not support lazy-loading
 		build = ":TSUpdate",
-		main = "nvim-treesitter.configs",
-		opts = {
-			auto_install = true,
-			ensure_installed = {
+		config = function()
+			-- Default install_dir is stdpath('data')/site, which is already on the
+			-- runtimepath, so no setup() call is needed for parsers to be found.
+			local ts = require("nvim-treesitter")
+
+			-- Parsers to keep installed (was `ensure_installed`). install() is async
+			-- and skips parsers that already exist, so running it every startup is
+			-- cheap.
+			ts.install({
 				"http",
 				"json",
 				"graphql",
@@ -119,10 +129,39 @@ return {
 				"toml",
 				"markdown",
 				"markdown_inline",
-			},
-			highlight = { enable = true },
-			indent = { enable = true },
-		},
+			})
+
+			-- master enabled highlight/indent automatically via opts; on main we
+			-- start them per-buffer on FileType. Folding is intentionally left to
+			-- nvim-ufo, so foldexpr is NOT set here.
+			local function ts_start(buf, lang)
+				if not pcall(vim.treesitter.start, buf, lang) then
+					return
+				end
+				vim.bo[buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+			end
+
+			vim.api.nvim_create_autocmd("FileType", {
+				callback = function(args)
+					local lang = vim.treesitter.language.get_lang(args.match)
+					if not lang then
+						return
+					end
+					if vim.list_contains(ts.get_installed(), lang) then
+						ts_start(args.buf, lang)
+					elseif vim.list_contains(ts.get_available(), lang) then
+						-- auto_install: fetch the parser, then start once it's ready.
+						ts.install(lang):await(function(err)
+							if not err and vim.api.nvim_buf_is_valid(args.buf) then
+								vim.schedule(function()
+									ts_start(args.buf, lang)
+								end)
+							end
+						end)
+					end
+				end,
+			})
+		end,
 	},
 	{
 		"nvim-lualine/lualine.nvim",
@@ -946,6 +985,26 @@ return {
 		event = "InsertEnter",
 		config = true,
 		-- use opts = {} for passing setup options
+	},
+
+	-- markdown preview rendered inline in the buffer
+	{
+		"OXY2DEV/markview.nvim",
+		-- markview self-lazies; loading eagerly (after the colorscheme) keeps its
+		-- highlight groups correct. Treesitter `markdown`/`markdown_inline` parsers
+		-- are already ensured in the treesitter spec above.
+		lazy = false,
+		dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
+		opts = {
+			-- Render the preview in normal mode; reveal raw markdown in insert mode.
+			-- "i" (insert) is deliberately absent from `modes`, so entering insert
+			-- shows the source doc and returning to normal re-renders the preview.
+			-- Matches upstream defaults but pinned here so the behaviour can't drift.
+			preview = {
+				modes = { "n", "no", "c" },
+				hybrid_modes = {}, -- whole buffer renders in normal mode (no per-line raw reveal)
+			},
+		},
 	},
 
 	--	{"rest-nvim/rest.nvim",},
