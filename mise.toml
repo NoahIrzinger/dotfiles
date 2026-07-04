@@ -9,7 +9,7 @@
 # editor / terminal / cli
 neovim    = "0.12"
 tmux      = "3.6b"
-zoxide    = "0.9"
+zoxide    = "0.10.0"
 fzf       = "0.73"
 ripgrep   = "15"
 fd        = "10"
