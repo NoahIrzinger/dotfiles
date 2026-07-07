@@ -22,7 +22,7 @@ stylua     = "2.5"
 tree-sitter = "0.26.10"
 
 # languages
-go        = "1.26.4"
+go        = "1.26.5"
 # Delve must track the Go toolchain closely. Mason's delve can lag and Go will
 # reject old debuggers at launch ("version of Delve is too old"). Keep dlv in
 # mise so it wins PATH before Mason's bin.
