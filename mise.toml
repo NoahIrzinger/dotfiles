@@ -57,7 +57,7 @@ helm      = "4"
 # postinstall. npm backend works cleanly like codex/pi above. same exact-pin
 # rule: an exact version is a filesystem check, not a proxy-hanging registry
 # query. bump with `mise use npm:@google/gemini-cli@<ver>`.
-"npm:@google/gemini-cli" = "0.50.0"
+"npm:@google/gemini-cli" = "0.51.0"
 
 # claude + opencode ship native binaries; their npm packages are thin downloaders
 # whose postinstall mise's npm backend skips (the wrapper then errors "native binary
