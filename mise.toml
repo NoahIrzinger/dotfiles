@@ -32,7 +32,7 @@ go        = "1.26.5"
 "aqua:go-delve/delve" = "1.26.3"
 python    = "3.14.6"
 node      = "24.18.0"
-"go:github.com/air-verse/air" = "1.66.0"
+"go:github.com/air-verse/air" = "1.67.1"
 
 # kubernetes
 kubectl   = "1.36"
