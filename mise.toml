@@ -51,7 +51,7 @@ helm      = "4"
 # below (whose npm wrappers need a postinstall mise skips). same exact-pin rule
 # as codex: an exact version is a filesystem check, not a proxy-hanging registry
 # query. bump with `mise use npm:@earendil-works/pi-coding-agent@<ver>`.
-"npm:@earendil-works/pi-coding-agent" = "0.81.0"
+"npm:@earendil-works/pi-coding-agent" = "0.81.1"
 
 # gemini (google) is pure-JS too: bin is bundle/gemini.js, no os/cpu pin, no
 # postinstall. npm backend works cleanly like codex/pi above. same exact-pin
