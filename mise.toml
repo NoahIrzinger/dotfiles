@@ -10,7 +10,7 @@
 neovim    = "0.12"
 tmux      = "3.6b"
 zoxide    = "0.10.0"
-fzf       = "0.74.1"
+fzf       = "0.74.2"
 ripgrep   = "15"
 fd        = "10"
 jq        = "1.8"
