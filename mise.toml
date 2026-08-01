@@ -64,7 +64,7 @@ helm      = "4"
 # not installed"). use the aqua backend, which fetches the real release binary.
 # claude self-update is off (DISABLE_AUTOUPDATER in common.sh) so mise owns the version.
 claude   = "2.1.220"
-opencode = "1.18.10"
+opencode = "1.18.11"
 
 # heavier toolchains (android builds etc.). skip on lean boxes / CI:
 #   ./install.sh --skip gradle,java,android-sdk
