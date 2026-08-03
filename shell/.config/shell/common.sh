@@ -164,8 +164,19 @@ _dots_bg_check() {  # background: fetch + record commits behind (best effort)
   git -C "$dir" rev-list --count HEAD..origin/master 2>/dev/null > "$_DOTS_STATE/update-status"
 }
 
-dotfiles-update() {  # pull + re-run the installer, then clear the nudge
-  bash "$HOME/.dotfiles/install.sh" "$@" || return
+dotfiles-update() {  # sync repo to origin/master, re-run the installer, clear the nudge
+  # the sync must happen HERE: install.sh only self-syncs on the curl|bash
+  # bootstrap path (no mise.toml yet). when run from a checked-out repo it
+  # installs whatever the local mise.toml pins, so without this pull a machine
+  # stays on stale tool versions forever. --autostash keeps uncommitted local
+  # state (e.g. pi's runtime-mutated settings.json) across the rebase; if the
+  # reapply conflicts, git parks it in the stash and says so.
+  local dir="$HOME/.dotfiles"
+  if [ -d "$dir/.git" ]; then
+    git -C "$dir" pull --rebase --autostash origin master \
+      || { echo "dotfiles-update: pull failed; resolve in $dir, then re-run" >&2; return 1; }
+  fi
+  bash "$dir/install.sh" "$@" || return
   printf '0\n' > "$_DOTS_STATE/update-status" 2>/dev/null
   : > "$_DOTS_STATE/update-check" 2>/dev/null
 }
