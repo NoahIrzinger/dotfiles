@@ -2,7 +2,7 @@
   "name": "pi-extensions",
   "private": true,
   "dependencies": {
-    "pi-subagents": "0.47.1",
+    "pi-subagents": "0.48.0",
     "pi-vim": "0.14.1",
     "pi-web-access": "0.22.0"
   }
