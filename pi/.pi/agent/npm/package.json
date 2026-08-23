@@ -4,6 +4,6 @@
   "dependencies": {
     "pi-subagents": "0.54.0",
     "pi-vim": "0.14.1",
-    "pi-web-access": "0.24.1"
+    "pi-web-access": "0.24.2"
   }
 }
