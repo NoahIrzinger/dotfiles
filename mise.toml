@@ -37,7 +37,7 @@ node      = "24.19.0"
 # kubernetes
 kubectl   = "1.36"
 k9s       = "0.51.0"
-kubecolor = "0.6"
+kubecolor = "0.7.1"
 helm      = "4"
 
 # codex via the npm backend (independent of the node tool, so it survives node
