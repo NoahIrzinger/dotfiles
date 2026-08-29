@@ -44,7 +44,7 @@ helm      = "4"
 # upgrades, unlike a plain `npm i -g`). EXACT version on purpose: a partial pin
 # (0.137) makes mise query the npm registry to resolve the patch on every shell
 # activation, which hangs behind a proxy. an exact version is a filesystem check.
-"npm:@openai/codex" = "0.150.1"
+"npm:@openai/codex" = "0.151.0"
 
 # pi (earendil) is a pure-JS coding agent: bin is dist/cli.js, os=any, no
 # postinstall. so the npm backend works cleanly here, unlike claude/opencode
