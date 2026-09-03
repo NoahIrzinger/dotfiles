@@ -63,7 +63,7 @@ helm      = "4"
 # whose postinstall mise's npm backend skips (the wrapper then errors "native binary
 # not installed"). use the aqua backend, which fetches the real release binary.
 # claude self-update is off (DISABLE_AUTOUPDATER in common.sh) so mise owns the version.
-claude   = "2.1.258"
+claude   = "2.1.259"
 opencode = "1.18.27"
 
 # heavier toolchains (android builds etc.). skip on lean boxes / CI:
