@@ -35,7 +35,7 @@ jobs:
 
       - name: commit lua formatting fixes
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        uses: stefanzweifel/git-auto-commit-action@v6.0.1
+        uses: stefanzweifel/git-auto-commit-action@v7.2.0
         with:
           commit_message: "style: format lua with stylua"
           file_pattern: nvim/.config/nvim/**/*.lua
