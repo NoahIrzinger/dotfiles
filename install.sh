@@ -589,6 +589,9 @@ fi
 # ---- 7. machine-local override stub ----
 if [ "$DRY" = 1 ]; then plan "create ~/.shell.local from shell.local.example if absent"
 else [ -f "$HOME/.shell.local" ] || cp "$REPO/shell.local.example" "$HOME/.shell.local"; fi
+# pi settings are machine state (pi rewrites them); seed once, never overwrite
+if [ "$DRY" = 1 ]; then plan "create ~/.pi/agent/settings.json from pi-settings.example.json if absent"
+else [ -f "$HOME/.pi/agent/settings.json" ] || { mkdir -p "$HOME/.pi/agent"; cp "$REPO/pi-settings.example.json" "$HOME/.pi/agent/settings.json"; }; fi
 
 if [ "$DRY" = 1 ]; then
   log "Dry run complete. Nothing was changed."

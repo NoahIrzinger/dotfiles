@@ -37,8 +37,11 @@ nvim/.config/nvim/.claude/
 # OS
 .DS_Store
 
-# pi packages: installed at runtime by `pi install`; track manifests only
-pi/.pi/agent/npm/node_modules/
-# pi runtime/private state
+# pi rewrites settings.json (model choice, changelog marker) and the npm
+# manifests at runtime, so tracking them conflicts with every update and can
+# leak a machine's private provider. install.sh seeds settings.json from
+# pi-settings.example.json once; only themes are stowed.
+pi/.pi/agent/settings.json
+pi/.pi/agent/npm/
 pi/.pi/agent/auth.json
 pi/.pi/agent/sessions/

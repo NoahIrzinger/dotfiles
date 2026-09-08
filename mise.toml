@@ -72,6 +72,12 @@ java          = "temurin-21.0.12+101.0.LTS"   # LTS, AGP-compatible; don't bump 
 gradle        = "9"
 "android-sdk" = "11.0"          # cmdline-tools (sdkmanager); install platforms/build-tools per project
 
+# ax (agentswitch) straight from its GitHub release via the github backend: mise
+# picks the os/arch tarball, verifies it against the release's checksums.txt, and
+# puts `ax` on the shim PATH. exact pin; Renovate bumps it per release. on a box
+# that builds ax from source, skip it: MISE_DISABLE_TOOLS="github:agentswitch-org/ax".
+"github:agentswitch-org/ax" = "0.1.4"
+
 [settings]
 # fail fast instead of bricking shell startup: fewer retries on a stalled network.
 http_retries = 1

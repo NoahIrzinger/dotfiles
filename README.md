@@ -38,7 +38,7 @@ git clone https://github.com/NoahIrzinger/dotfiles ~/.dotfiles && ~/.dotfiles/in
 - packages listed in `packages`.
 - `.bashrc`/`.zshrc` are thin; both source `~/.config/shell/common.sh` (aliases, env, PATH, mise, zoxide).
 - machine-local: `cp shell.local.example ~/.shell.local` (sourced by `common.sh`, gitignored).
-- pi: binary/version via `mise.toml`; settings + package manifests via the `pi` stow package. Auth, sessions, and `node_modules` stay untracked.
+- pi: binary via `mise.toml`; themes via the `pi` stow package. `settings.json` is seeded once from `pi-settings.example.json` and then owned by pi (it rewrites it at runtime), so it stays untracked along with the npm manifests, auth, and sessions. Packages: `pi install` / `pi update --all`.
 
 ## WSL
 
