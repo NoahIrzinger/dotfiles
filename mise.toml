@@ -68,7 +68,7 @@ opencode = "1.18.29"
 
 # heavier toolchains (android builds etc.). skip on lean boxes / CI:
 #   ./install.sh --skip gradle,java,android-sdk
-java          = "temurin-21.0.12+8.0.LTS"   # LTS, AGP-compatible; don't bump past what Android supports
+java          = "temurin-21.0.12+101.0.LTS"   # LTS, AGP-compatible; don't bump past what Android supports
 gradle        = "9"
 "android-sdk" = "11.0"          # cmdline-tools (sdkmanager); install platforms/build-tools per project
 
