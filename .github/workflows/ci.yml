@@ -23,7 +23,7 @@ jobs:
           repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
 
-      - uses: jdx/mise-action@v3.6.3
+      - uses: jdx/mise-action@v4.3.0
         with:
           install: false
 
