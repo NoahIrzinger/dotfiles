@@ -35,7 +35,7 @@ node      = "24.21.0"
 "go:github.com/air-verse/air" = "1.67.4"
 
 # kubernetes
-kubectl   = "1.37.0"
+kubectl   = "1.37.1"
 k9s       = "0.51.0"
 kubecolor = "0.8.0"
 helm      = "4"
