@@ -360,19 +360,30 @@ if [ "$CONFIGS_ONLY" = 0 ]; then
     # node first so npm-backend tools (codex) have an interpreter on a fresh box
     if grep -q '^node' "$REPO/mise.toml"; then
       log "Installing node (runtime for npm-backend tools)"
-      ( cd "$REPO" && mise install -y node ) || log "node install had issues; see $LOG"
+      ( cd "$REPO" && mise install -y --verbose node ) || log "node install had issues; see $LOG"
     fi
-    log "Installing all tools"
+    log "Installing all tools (parallel; waiting for every tool to finish)"
     # non-fatal: one bad tool shouldn't abort the bootstrap; report what's missing
-    if ! ( cd "$REPO" && mise install -y ); then
+    if ! ( cd "$REPO" && mise install -y --verbose ); then
       log "some tools did not install; continuing (full output in $LOG):"
-      ( cd "$REPO" && mise ls --missing 2>/dev/null | sed 's/^/   still missing: /' ) || true
+      ( cd "$REPO" && to 30 mise ls --missing | sed 's/^/   still missing: /' ) \
+        || log "  missing-tool check failed or timed out; see $LOG"
     fi
-    # uninstall tools dropped from the config (commented out / --skip'd)
-    prunable="$(mise ls --prunable 2>/dev/null | awk 'NF{print $1}' | sort -u | tr '\n' ' ')"
-    [ -n "$prunable" ] && { log "Removing tools no longer in config: $prunable"; mise prune >/dev/null 2>&1 || true; }
-    mise reshim >/dev/null 2>&1 || true
+    # Keep cleanup visible and bounded: these commands can resolve versions for
+    # tracked configs, and prune otherwise waits for confirmation on stdin.
+    log "Mise install finished; checking unused tool versions (30s limit)"
+    if prunable="$(to 30 mise ls --prunable)"; then
+      if [ -n "$prunable" ]; then
+        log "Removing unused tool versions (120s limit)"
+        to 120 mise prune --yes || log "  mise prune failed or timed out; see $LOG"
+      fi
+    else
+      log "  unused-version check failed or timed out; skipping cleanup"
+    fi
+    log "Rebuilding mise shims (60s limit)"
+    to 60 mise reshim || log "  mise reshim failed or timed out; see $LOG"
     export PATH="$SHIMS:$PATH"
+    log "Mise tool setup finished"
   fi
 
   # ---- 3.5 android platform-tools (adb/fastboot) from Google's official release ----
