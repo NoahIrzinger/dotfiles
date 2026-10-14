@@ -44,10 +44,13 @@ jobs:
         run: git diff --exit-code -- nvim/.config/nvim
 
       - name: shellcheck
-        run: shellcheck --severity=warning install.sh link.sh uninstall.sh themes/theme wsl/wsl-optimize.sh shell/.config/shell/ca-bundle.sh tests/ca-bundle.sh
+        run: shellcheck --severity=warning install.sh link.sh uninstall.sh themes/theme wsl/wsl-optimize.sh shell/.config/shell/ca-bundle.sh tests/ca-bundle.sh tests/bootstrap-env.sh
 
       - name: offline CA bundle regression checks
         run: bash tests/ca-bundle.sh
+
+      - name: bootstrap environment regression checks
+        run: bash tests/bootstrap-env.sh
 
   install:
     strategy:

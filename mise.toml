@@ -79,6 +79,9 @@ gradle        = "9"
 "github:agentswitch-org/ax" = "0.1.6"
 
 [settings]
+# Installation is explicit via install.sh/mise install. A Python shim invoked by
+# another install must not recursively start an install and wait on its own lock.
+auto_install = false
 # fail fast instead of bricking shell startup: fewer retries on a stalled network.
 http_retries = 1
 fetch_remote_versions_timeout = "8s"

@@ -19,6 +19,26 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHIMS="$HOME/.local/share/mise/shims"
 REPO_URL="https://github.com/NoahIrzinger/dotfiles"
 
+# A build helper can probe python3/python3.x while mise holds Python's install
+# lock. An inherited shim must not auto-install that same tool recursively.
+bootstrap_tool_env(){
+  local entry clean_path="" configured_shims
+  local -a entries
+  configured_shims="${MISE_SHIMS_DIR:-${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}/shims}"
+  IFS=: read -r -a entries <<< "$PATH"
+  for entry in "${entries[@]}"; do
+    [ -n "$entry" ] || continue
+    if [ "$entry" = "$SHIMS" ] || [ "$entry" -ef "$SHIMS" ] \
+       || [ "$entry" = "$configured_shims" ] || [ "$entry" -ef "$configured_shims" ]; then
+      continue
+    fi
+    clean_path="${clean_path:+$clean_path:}$entry"
+  done
+  export PATH="${clean_path:-/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin}"
+  export MISE_AUTO_INSTALL=0 MISE_NOT_FOUND_AUTO_INSTALL=0 MISE_EXEC_AUTO_INSTALL=0
+}
+bootstrap_tool_env
+
 # ---- logging: tee to a per-user private log (not /tmp; set -x can echo secrets).
 #      on failure the ERR trap prints the dead line/command + log path. ----
 LOGDIR="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
