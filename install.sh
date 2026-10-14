@@ -313,18 +313,12 @@ if [ "$CONFIGS_ONLY" = 0 ]; then
   # proxy's root/intermediate PEMs in ~/.config/certs/extra-roots/ first.
   CERT_DIR="$HOME/.config/certs/extra-roots"; CA_BUNDLE="$HOME/.config/certs/cacert.pem"
   if [ "$DRY" = 1 ]; then
-    plan "CA: build $CA_BUNDLE from $CERT_DIR + certifi (if any), export NODE_EXTRA_CA_CERTS etc."
+    plan "CA: build $CA_BUNDLE offline from OS public roots + $CERT_DIR, export NODE_EXTRA_CA_CERTS etc."
   else
     mkdir -p "$CERT_DIR"
     if ls "$CERT_DIR"/*.pem >/dev/null 2>&1; then
-      log "CA: building trust bundle from $CERT_DIR + certifi"
-      base="$(python3 -m certifi 2>/dev/null || true)"
-      if [ -z "$base" ]; then                    # certifi missing: try to bootstrap pip
-        cat "$CERT_DIR"/*.pem > "$CA_BUNDLE"
-        PIP_CERT="$CA_BUNDLE" SSL_CERT_FILE="$CA_BUNDLE" python3 -m pip install --user -q certifi 2>/dev/null || true
-        base="$(python3 -m certifi 2>/dev/null || true)"
-      fi
-      { if [ -n "$base" ]; then cat "$base"; fi; cat "$CERT_DIR"/*.pem; } > "$CA_BUNDLE"
+      log "CA: building trust bundle offline from OS public roots + $CERT_DIR"
+      bash "$REPO/shell/.config/shell/ca-bundle.sh" "$CERT_DIR" "$CA_BUNDLE"
       export SSL_CERT_FILE="$CA_BUNDLE" REQUESTS_CA_BUNDLE="$CA_BUNDLE" PIP_CERT="$CA_BUNDLE" \
              CURL_CA_BUNDLE="$CA_BUNDLE" NODE_EXTRA_CA_CERTS="$CA_BUNDLE" GIT_SSL_CAINFO="$CA_BUNDLE"
       log "  trusting $(grep -c 'BEGIN CERT' "$CA_BUNDLE" 2>/dev/null || echo '?') CA certs in the bundle"
@@ -332,12 +326,17 @@ if [ "$CONFIGS_ONLY" = 0 ]; then
       # env vars (mise's Rust client, apt) trust the proxy too. needs sudo (have it for apt).
       if [ "$OS" = linux ] && command -v update-ca-certificates >/dev/null 2>&1 \
          && { [ -n "$SUDO" ] || [ "$(id -u)" = 0 ]; }; then
+        log "CA: updating the OS trust store (sudo may prompt)"
         ci=0
         for c in "$CERT_DIR"/*.pem; do
           [ -e "$c" ] || continue; ci=$((ci+1))
           $SUDO cp "$c" "/usr/local/share/ca-certificates/extra-root-$ci.crt"
         done
-        $SUDO update-ca-certificates >/dev/null 2>&1 && log "  added $ci cert(s) to the OS trust store"
+        if $SUDO update-ca-certificates; then
+          log "  added $ci cert(s) to the OS trust store"
+        else
+          log "  OS trust-store update failed; the user bundle is ready, but system clients may still reject the proxy"
+        fi
       fi
     else
       log "CA: none in $CERT_DIR (fine off-VPN; behind a proxy, drop your PEMs there and re-run)"

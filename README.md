@@ -51,6 +51,8 @@ git clone https://github.com/NoahIrzinger/dotfiles ~/.dotfiles && ~/.dotfiles/in
 ## Custom CA certs
 
 - behind an inspecting proxy: drop CA PEMs in `~/.config/certs/extra-roots/`, run `ca-rebuild`.
+- builds offline from the OS public roots plus your PEMs; no Python/pip download is needed. On Ubuntu/WSL the base is `/etc/ssl/certs/ca-certificates.crt` (from `ca-certificates`); on macOS it is `/etc/ssl/cert.pem`.
+- validates PEMs before replacing the bundle; a failed rebuild preserves the previous file. The installer also updates the Linux OS trust store and shows its progress/errors.
 - sets `SSL_CERT_FILE` etc. in `common.sh` + `install.sh`. no-op when empty.
 
 ## Security

@@ -42,17 +42,9 @@ if [ -f "$HOME/.config/certs/cacert.pem" ]; then
   export NODE_EXTRA_CA_CERTS="$SSL_CERT_FILE"  # node / npm / codex
   export GIT_SSL_CAINFO="$SSL_CERT_FILE"       # git
 fi
-ca-rebuild() {  # combine certifi's public roots + your drop-in certs -> cacert.pem
-  local d="$HOME/.config/certs/extra-roots" out="$HOME/.config/certs/cacert.pem" base
-  ls "$d"/*.pem >/dev/null 2>&1 || { echo "no certs in $d" >&2; return 1; }
-  base="$(python3 -m certifi 2>/dev/null)"
-  if [ -z "$base" ]; then           # certifi missing: bootstrap pip through the proxy
-    cat "$d"/*.pem > "$out"
-    PIP_CERT="$out" SSL_CERT_FILE="$out" python3 -m pip install --user -q certifi 2>/dev/null
-    base="$(python3 -m certifi 2>/dev/null)"
-  fi
-  { [ -n "$base" ] && cat "$base"; cat "$d"/*.pem; } > "$out"
-  echo "rebuilt $out ($(grep -c 'BEGIN CERT' "$out") certs); open a new shell to pick it up"
+ca-rebuild() {  # combine OS public roots + your drop-in certs, without network access
+  bash "$HOME/.config/shell/ca-bundle.sh" || return
+  echo "open a new shell to pick up the CA bundle"
 }
 
 # --- vi mode on the command line ---
