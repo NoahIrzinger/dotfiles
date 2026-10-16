@@ -14,7 +14,7 @@ fzf       = "0.74.5"
 ripgrep   = "15"
 fd        = "10"
 jq        = "1.8"
-lazygit   = "0.66.1"
+lazygit   = "0.66.2"
 shellcheck = "0.11"
 stylua     = "2.6.0"
 # kulala.nvim builds its own http parser at setup via the `tree-sitter` CLI
