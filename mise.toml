@@ -8,7 +8,7 @@
 [tools]
 # editor / terminal / cli
 neovim    = "0.12"
-tmux      = "3.6b"
+tmux      = "3.8"
 zoxide    = "0.10.0"
 fzf       = "0.75.0"
 ripgrep   = "15"
