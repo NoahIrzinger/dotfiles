@@ -6,7 +6,7 @@
 #   or persist:         export MISE_DISABLE_TOOLS="gradle,java"
 [tools]
 # editor / terminal / cli
-neovim    = "0.12"
+neovim    = "0.12.6"
 tmux      = "3.8"
 zoxide    = "0.10.0"
 fzf       = { version = "0.75.0", install_env = { GOTOOLCHAIN = "local" } }
@@ -76,6 +76,7 @@ gradle        = "9.9.2"
 ax = { version = "0.1.6", install_env = { GOTOOLCHAIN = "local" } }
 
 [tool_alias]
+neovim = "aqua:neovim/neovim"
 opencode = "aqua:anomalyco/opencode"
 fzf = "go:github.com/junegunn/fzf"
 lazygit = "go:github.com/jesseduffield/lazygit"

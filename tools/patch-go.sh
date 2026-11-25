@@ -38,13 +38,16 @@ esac
   set --
   while read -r operation value; do
     case "$operation" in
-      replace) "$go_bin" mod edit "-replace=$value" ;;
+      replace)
+        "$go_bin" mod edit "-replace=$value"
+        "$go_bin" mod download "${value%%=*}"
+        ;;
       require) set -- "$@" "$value" ;;
       '') ;;
       *) exit 1 ;;
     esac
   done <<< "$updates"
-  if [ "$#" -gt 0 ]; then "$go_bin" get "$@"; fi
+  "$go_bin" get "$@" "./${package#"$module"}"
   "$go_bin" mod verify
   GOFLAGS='' "$go_bin" build -mod=readonly -trimpath -ldflags="$ldflags" -o "$stage/tool" "./${package#"$module"}"
 )
