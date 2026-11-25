@@ -35,6 +35,14 @@ if bash "$repo/tools/check-go.sh" "$td/go" "$td/buildinfo" >/dev/null 2>&1; then
 fi
 printf 'fixture: go1.27.4\n\tdep\tgolang.org/x/text\tv0.42.0\n' > "$td/buildinfo"
 bash "$repo/tools/check-go.sh" "$td/go" "$td/buildinfo" >/dev/null
+printf 'fixture: go1.26.10\n' > "$td/buildinfo"
+if bash "$repo/tools/check-go.sh" "$td/go" "$td/buildinfo" >/dev/null 2>&1; then exit 1; fi
+printf 'fixture: go1.26.11\n\tdep\tgithub.com/blakesmith/ar\tv0.0.0-20190502131153-809d4375e1fb\n' > "$td/buildinfo"
+if bash "$repo/tools/check-go.sh" "$td/go" "$td/buildinfo" >/dev/null 2>&1; then exit 1; fi
+printf '\t=>\tgithub.com/sbomify/ar\tv0.0.0-20261110115757-bbd92cc72197\n' >> "$td/buildinfo"
+bash "$repo/tools/check-go.sh" "$td/go" "$td/buildinfo" >/dev/null
+printf '\tdep\tgo.opentelemetry.io/otel\tv1.47.0-rc.1\n' >> "$td/buildinfo"
+if bash "$repo/tools/check-go.sh" "$td/go" "$td/buildinfo" >/dev/null 2>&1; then exit 1; fi
 echo 'PASS: binary gate checks runtime and dependency floors independently'
 
 # Use a disposable local Git fixture; no network and no live plugin directories.

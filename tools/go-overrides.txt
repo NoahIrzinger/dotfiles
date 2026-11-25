@@ -1,6 +1,6 @@
 # Module, minimum safe version, exact rebuild override. Only linked modules are selected.
-golang.org/x/text v0.41.0 v0.43.0
-golang.org/x/mod v0.40.0 v0.41.0
+golang.org/x/text v0.41.0 v0.44.0
+golang.org/x/mod v0.40.0 v0.42.0
 golang.org/x/net v0.62.0 v0.62.0
 golang.org/x/crypto v0.59.0 v0.59.0
 github.com/andybalholm/brotli v1.2.7 v1.2.7
