@@ -178,8 +178,24 @@ url_api = "https://api.github.com/repos/gradle/gradle-distributions/releases/ass
 
 [[tools.helm]]
 version = "4.3.2"
-backend = "go:helm.sh/helm/v4/cmd/helm"
+backend = "aqua:helm/helm"
 specifiers = ["4.3.2"]
+
+[tools.helm."platforms.linux-arm64"]
+checksum = "sha256:df31cb61680ef728f82c770e5280dd565617bee6b039d37e85c677288be4bbb0"
+url = "https://get.helm.sh/helm-v4.3.2-linux-arm64.tar.gz"
+
+[tools.helm."platforms.linux-x64"]
+checksum = "sha256:d1c0278d46beab79582d7e50f5b3dc206944ba8e577cde618513fd07daa53983"
+url = "https://get.helm.sh/helm-v4.3.2-linux-amd64.tar.gz"
+
+[tools.helm."platforms.macos-arm64"]
+checksum = "sha256:6f3421de3a8cc2ac578c8cfb33b8edde290dde2871bc1bab12e24f2e5caeaa90"
+url = "https://get.helm.sh/helm-v4.3.2-darwin-arm64.tar.gz"
+
+[tools.helm."platforms.macos-x64"]
+checksum = "sha256:9e0068e9ae18c441d27388190ee7f53ae65eba44bfe910b40bdac44c4b51fa71"
+url = "https://get.helm.sh/helm-v4.3.2-darwin-amd64.tar.gz"
 
 [[tools.java]]
 version = "temurin-21.0.13.1+2.0.LTS"
@@ -319,6 +335,12 @@ url = "https://nodejs.org/dist/v24.22.3/node-v24.22.3-darwin-arm64.tar.gz"
 [tools.node."platforms.macos-x64"]
 checksum = "sha256:977614af0504c81045e7fd85596dbca0e5f951b96681516dadafedcca8c447f7"
 url = "https://nodejs.org/dist/v24.22.3/node-v24.22.3-darwin-x64.tar.gz"
+
+[[tools."npm:@earendil-works/pi-coding-agent"]]
+version = "1.6.1"
+aube = { path = ".mise/locks/npm-earendil-works-pi-coding-agent/1.6.1", digest = "sha256:f89b624eac0996b80557dca44d6df36bdc2db10d792a4e9c550b66100efbafce" }
+backend = "npm:@earendil-works/pi-coding-agent"
+specifiers = ["1.6.1"]
 
 [[tools."npm:@google/gemini-cli"]]
 version = "0.71.1"

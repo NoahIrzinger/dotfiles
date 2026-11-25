@@ -18,7 +18,7 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHIMS="$HOME/.local/share/mise/shims"
 REPO_URL="https://github.com/NoahIrzinger/dotfiles"
-MISE_VERSION="v2026.10.21"
+MISE_VERSION="v2026.11.14"
 
 # A build helper can probe python3/python3.x while mise holds Python's install
 # lock. An inherited shim must not auto-install that same tool recursively.
@@ -65,6 +65,9 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+case ",$SKIP," in
+  *,pi,*) SKIP="$SKIP,npm:@earendil-works/pi-coding-agent" ;;
+esac
 export MISE_DISABLE_TOOLS="$SKIP"
 # --verbose: trace every command, and make mise itself chatty
 [ "$VERBOSE" = 1 ] && { export MISE_VERBOSE=1; set -x; }
@@ -189,7 +192,6 @@ lazygit|lazygit
 delve|dlv
 k9s|k9s
 kubecolor|kubecolor
-helm|helm
 ax|ax
 go:github.com/air-verse/air|air
 gopls|gopls
@@ -238,22 +240,6 @@ doctor(){
     *,kubectl,*) ;;
     *) bash "$REPO/tools/check-go.sh" "$go_bin" "$HOME/.local/bin/kubectl" >/dev/null 2>&1 \
          && row ok "kubectl security" || row fail "kubectl security" "missing or stale custom build" ;;
-  esac
-  case ",$SKIP," in
-    *,pi,*|*,npm:@earendil-works/pi-coding-agent,*) ;;
-    *)
-      local node_bin
-      node_bin="$(cd "$REPO" && mise which node 2>/dev/null)"
-      if [ -x "$HOME/.local/bin/pi" ] && "$node_bin" -e '
-        const {createRequire}=require("node:module");
-        const req=createRequire(process.argv[1]);
-        for (const [name,version] of Object.entries(require(process.argv[2]).overrides)) {
-          if (req(name+"/package.json").version!==version) process.exit(1);
-        }
-      ' "$HOME/.local/share/dotfiles/pi/current/node_modules/@earendil-works/pi-coding-agent/package.json" "$REPO/tools/pi/package.json" >/dev/null 2>&1; then
-        row ok "Pi dependencies" "security overrides verified"
-      else row fail "Pi dependencies" "missing or stale custom install"; fi
-      ;;
   esac
 
   if [ -L "$HOME/.config/nvim" ] && [ -f "$HOME/.config/shell/common.sh" ]; then row ok "configs linked"
@@ -323,10 +309,10 @@ log "install log: $LOG"
 # bump = update MISE_VERSION + the 4 hashes (from SHASUMS256.txt) in one commit.
 mise_expected_sha(){  # $1 = <os>-<arch>
   case "$1" in
-    linux-x64)   echo ccfe12d7a62c6fb9def2a20db1f210f13a51de881f21fd8c85db4b6312405d07 ;;
-    linux-arm64) echo a7c96627e56c075543fe1c1aafeb289d2588d6ddfd4d705fce4ae140c57e190c ;;
-    macos-arm64) echo b20d30788a819fade398a1cb92aee56c383e3c34324162ec39fb8567dee79ba6 ;;
-    macos-x64)   echo 5dde6e3fcda4d8a68b95cc2180dacd58e7b940f86e4579991e13540a5d009055 ;;
+    linux-x64)   echo 6fa596291e9758106f761fea4f8e7fac6c3e7ff4714d5c0b9a76e16068db14f6 ;;
+    linux-arm64) echo 7bd3b2d5ffff077a7662ba186c09600e5b40c1eee9df0c264ed67642ce0a8698 ;;
+    macos-arm64) echo ad39dddb61236cc546ecbd0294aa3fc72a5ae7f1f8c7e6dc6fd4211f99eb3b79 ;;
+    macos-x64)   echo 7f38115f28c6cef9d344bc528670d1033d24a9385455013768e78ad6203d9791 ;;
   esac
 }
 install_homebrew() (
@@ -500,10 +486,6 @@ if [ "$CONFIGS_ONLY" = 0 ]; then
     case ",$SKIP," in
       *,kubectl,*) ;;
       *) DOTFILES_GO_BIN="$go_bin" bash "$REPO/tools/install-kubectl.sh" ;;
-    esac
-    case ",$SKIP," in
-      *,pi,*|*,npm:@earendil-works/pi-coding-agent,*) ;;
-      *) DOTFILES_NODE_BIN="$(cd "$REPO" && mise which node)" bash "$REPO/tools/install-pi.sh" ;;
     esac
     # Keep cleanup visible and bounded: these commands can resolve versions for
     # tracked configs, and prune otherwise waits for confirmation on stdin.
@@ -736,7 +718,12 @@ else [ -f "$HOME/.pi/agent/settings.json" ] || { mkdir -p "$HOME/.pi/agent"; cp 
 if [ "$DRY" = 0 ] && [ "$CONFIGS_ONLY" = 0 ]; then
   case ",$SKIP," in
     *,pi,*|*,npm:@earendil-works/pi-coding-agent,*) ;;
-    *) "$(cd "$REPO" && mise which node)" "$REPO/tools/pi/migrate-settings.mjs" "$HOME/.pi/agent/settings.json" ;;
+    *)
+      "$(cd "$REPO" && mise which node)" "$REPO/tools/pi/migrate-settings.mjs" "$HOME/.pi/agent/settings.json"
+      if [ "$(readlink "$HOME/.local/bin/pi" 2>/dev/null)" = "$HOME/.local/share/dotfiles/pi/current/pi" ]; then
+        rm "$HOME/.local/bin/pi"
+      fi
+      ;;
   esac
 fi
 

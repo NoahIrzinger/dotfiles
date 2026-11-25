@@ -10,7 +10,7 @@ module="$(printf '%s\n' "$metadata" | awk '$1=="mod" {print $2}')"
 version="$(printf '%s\n' "$metadata" | awk '$1=="mod" {print $3}')"
 package="$(printf '%s\n' "$metadata" | awk '$1=="path" {print $2}')"
 case "$module" in
-  github.com/air-verse/air|golang.org/x/tools/gopls|github.com/incu6us/goimports-reviser/v3|github.com/kubecolor/kubecolor|helm.sh/helm/v4|github.com/derailed/k9s) ;;
+  github.com/air-verse/air|golang.org/x/tools/gopls|github.com/incu6us/goimports-reviser/v3|github.com/kubecolor/kubecolor|github.com/derailed/k9s) ;;
   *) echo "No reviewed dependency rebuild for $module" >&2; exit 1 ;;
 esac
 [[ "$version" = v* ]] || { echo 'Reinstall the pinned mise tool before rebuilding' >&2; exit 1; }
@@ -27,7 +27,6 @@ updates="$(awk -f "$repo/tools/go-updates.awk" "$repo/tools/go-overrides.txt" - 
 ldflags=""
 compiler="$("$go_bin" env GOVERSION)"
 case "$module" in
-  helm.sh/helm/v4) ldflags="-X helm.sh/helm/v4/internal/version.version=$version" ;;
   github.com/derailed/k9s) ldflags="-X github.com/derailed/k9s/cmd.version=$version" ;;
   github.com/air-verse/air) ldflags="-X main.airVersion=$version+dotfiles -X main.goVersion=$compiler" ;;
   github.com/kubecolor/kubecolor) ldflags="-X main.Version=$version+dotfiles" ;;

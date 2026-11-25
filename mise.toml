@@ -41,7 +41,7 @@ yamlfmt = { version = "0.21.0", install_env = { GOTOOLCHAIN = "local" } }
 # kubectl needs Kubernetes' vendored staging modules: tools/install-kubectl.sh.
 k9s       = { version = "0.51.0", install_env = { GOTOOLCHAIN = "local" } }
 kubecolor = { version = "0.9.0", install_env = { GOTOOLCHAIN = "local" } }
-helm      = { version = "4.3.2", install_env = { GOTOOLCHAIN = "local", GOFLAGS = "-ldflags=-X=helm.sh/helm/v4/internal/version.version=v4.3.2" } }
+helm      = "4.3.2"
 
 # codex via the npm backend (independent of the node tool, so it survives node
 # upgrades, unlike a plain `npm i -g`). EXACT version on purpose: a partial pin
@@ -49,8 +49,7 @@ helm      = { version = "4.3.2", install_env = { GOTOOLCHAIN = "local", GOFLAGS 
 # activation, which hangs behind a proxy. an exact version is a filesystem check.
 "npm:@openai/codex" = "0.172.0"
 
-# Pi is installed from tools/pi/package-lock.json with an Undici security override.
-# mise's npm backend cannot express that override; see tools/install-pi.sh.
+"npm:@earendil-works/pi-coding-agent" = "1.6.1"
 
 # gemini (google) is pure-JS too: bin is bundle/gemini.js, no os/cpu pin, no
 # postinstall. npm backend works cleanly like codex/pi above. same exact-pin
@@ -83,7 +82,6 @@ lazygit = "go:github.com/jesseduffield/lazygit"
 delve = "go:github.com/go-delve/delve/cmd/dlv"
 k9s = "go:github.com/derailed/k9s"
 kubecolor = "go:github.com/kubecolor/kubecolor"
-helm = "go:helm.sh/helm/v4/cmd/helm"
 ax = "go:github.com/agentswitch-org/ax/cmd/ax"
 gopls = "go:golang.org/x/tools/gopls"
 gofumpt = "go:mvdan.cc/gofumpt"

@@ -2,8 +2,8 @@
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.5",
   "packages": [
-    "~/.local/share/dotfiles/pi/current/node_modules/pi-vim",
-    "~/.local/share/dotfiles/pi/current/node_modules/pi-subagents"
+    "npm:pi-vim@0.16.0",
+    "npm:pi-subagents@0.90.0"
   ],
   "theme": "dotfiles-dark",
   "defaultThinkingLevel": "xhigh"

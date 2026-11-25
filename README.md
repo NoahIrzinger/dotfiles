@@ -23,7 +23,7 @@ git clone https://github.com/NoahIrzinger/dotfiles ~/.dotfiles && ~/.dotfiles/in
 
 ## Tools
 
-- `mise.toml` and `mise.lock` define the toolset; re-run `./install.sh` to converge. Refresh the lock after pin changes with `mise lock --platform linux-x64,linux-arm64,macos-arm64,macos-x64`.
+- `mise.toml` and `mise.lock` define the toolset; re-run `./install.sh` to converge. Refresh the lock after pin changes with `mise lock --platform linux-x64,linux-arm64,macos-arm64,macos-x64`. Add `--global` when this checkout is also the symlinked global config.
 - drop one: comment it in `mise.toml`, re-run. skip locally: `--skip`, or `MISE_DISABLE_TOOLS=` in `~/.shell.local`.
 
 ## Updates
@@ -38,7 +38,7 @@ git clone https://github.com/NoahIrzinger/dotfiles ~/.dotfiles && ~/.dotfiles/in
 - packages listed in `packages`.
 - `.bashrc`/`.zshrc` are thin; both source `~/.config/shell/common.sh` (aliases, env, PATH, mise, zoxide).
 - machine-local: `cp shell.local.example ~/.shell.local` (sourced by `common.sh`, gitignored).
-- pi: `tools/install-pi.sh` installs the checksum-verified upstream package using `tools/pi/package-lock.json`. The custom packaging step removes upstream shrinkwrap so the pinned Undici and minimatch overrides take effect. Refresh with `bash tools/install-pi.sh --lock` using the pinned Node. The stock vim/subagents extensions use this locked prefix; only their stock settings entries are migrated. Other packages, providers, auth and sessions remain machine-local. Skip with `--skip pi`.
+- Pi installs through the mise npm backend. Pi manages the pinned vim and subagents extensions through its native package manager. The installer migrates the two stock package entries and preserves custom settings.
 
 ## WSL
 
@@ -59,7 +59,7 @@ git clone https://github.com/NoahIrzinger/dotfiles ~/.dotfiles && ~/.dotfiles/in
 ## Security
 
 - downloads pinned + checksum-verified (mise, Android platform-tools, win32yank, TPM); tool versions in `mise.toml`.
-- Go clients and editor tools use mise's native Go backend with Go `1.27.4`. `tools/check-go.sh` verifies embedded runtimes and dependency security floors. Where upstream dependencies remain vulnerable, the custom `tools/patch-go.sh` rebuilds the pinned module with exact overrides from `tools/go-overrides.txt`, verified through Go's checksum database. The K9s build substitutes the [sbomify archive-reader fix](https://github.com/sbomify/ar/commit/4e0f3d6ee7e13b3a9d540f26dd28cbafd0527fbf) for the unpatched upstream reader (GO-2026-6905).
+- Helm 4 uses the checksum-locked upstream release.
+- Source-built Go clients and editor tools use mise's native Go backend with Go `1.27.4`. `tools/check-go.sh` verifies embedded runtimes and dependency security floors. Where upstream dependencies remain vulnerable, the custom `tools/patch-go.sh` rebuilds the pinned module with exact overrides from `tools/go-overrides.txt`, verified through Go's checksum database. The K9s build substitutes the [sbomify archive-reader fix](https://github.com/sbomify/ar/commit/4e0f3d6ee7e13b3a9d540f26dd28cbafd0527fbf) for the unpatched upstream reader (GO-2026-6905).
 - kubectl uses the custom `tools/install-kubectl.sh` because Kubernetes requires its staging workspace. Its source commit and archive checksum are pinned there; the build refreshes vendored `x/net`, `x/text`, and OpenTelemetry to fixed versions. Source builds add compilation time. Retire these workarounds when upstream binaries and dependencies pass the same checks.
-- Pi `0.99.2` uses `tools/pi/package-lock.json` with Undici `8.12.3` and minimatch `11.0.9`. `tools/install-pi.sh` verifies the upstream tarball, removes its bundled shrinkwrap and installs the locked graph without lifecycle scripts. The original shrinkwrap prevents a normal npm override from replacing vulnerable Undici. Stock extension entries migrate to the locally locked packages; other settings stay intact.
 - secrets in `~/.shell.local` (gitignored).

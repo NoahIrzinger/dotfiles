@@ -8,12 +8,12 @@ trap 'rm -rf "$td"' EXIT
 source /dev/stdin <<< "$(sed -n '/^mise_is_current(){/,/^}/p' "$repo/install.sh")"
 # Consumed by the sourced gate.
 # shellcheck disable=SC2034
-MISE_VERSION=v2026.10.21
+MISE_VERSION=v2026.11.14
 mise(){ printf '%s test-platform\n' "$fake_version"; }
-for fake_version in 2026.6.0 2026.10.0 2026.10.20 unknown 2026.10.21-dev; do
+for fake_version in 2026.6.0 2026.10.21 2026.11.13 unknown 2026.11.14-dev; do
   if mise_is_current; then echo "FAIL: accepted mise $fake_version" >&2; exit 1; fi
 done
-for fake_version in 2026.10.21 2026.10.22 2027.1.0; do mise_is_current; done
+for fake_version in 2026.11.14 2026.11.15 2027.1.0; do mise_is_current; done
 unset -f mise
 echo "PASS: mise gate rejects old and unparseable versions, accepts fixed/newer releases"
 

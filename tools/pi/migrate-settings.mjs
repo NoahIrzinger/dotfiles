@@ -5,12 +5,13 @@ const file = process.argv[2];
 if (!file) throw new Error('Settings path required');
 if (existsSync(file)) {
   const settings = JSON.parse(readFileSync(file, 'utf8'));
-  const replacements = new Map([
-    ['npm:pi-vim', '~/.local/share/dotfiles/pi/current/node_modules/pi-vim'],
-    ['npm:pi-vim@0.14.2', '~/.local/share/dotfiles/pi/current/node_modules/pi-vim'],
-    ['npm:pi-subagents', '~/.local/share/dotfiles/pi/current/node_modules/pi-subagents'],
-    ['npm:pi-subagents@0.66.0', '~/.local/share/dotfiles/pi/current/node_modules/pi-subagents'],
-  ]);
+  const defaults = JSON.parse(readFileSync(new URL('../../pi-settings.example.json', import.meta.url), 'utf8'));
+  const replacements = new Map();
+  for (const source of defaults.packages) {
+    const name = source.slice(4, source.lastIndexOf('@'));
+    replacements.set('npm:' + name, source);
+    replacements.set('~/.local/share/dotfiles/pi/current/node_modules/' + name, source);
+  }
   let changed = false;
   const replace = (source) => {
     if (!replacements.has(source)) return source;
