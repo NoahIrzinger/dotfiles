@@ -18,6 +18,7 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHIMS="$HOME/.local/share/mise/shims"
 REPO_URL="https://github.com/NoahIrzinger/dotfiles"
+MISE_VERSION="v2026.10.21"
 
 # A build helper can probe python3/python3.x while mise holds Python's install
 # lock. An inherited shim must not auto-install that same tool recursively.
@@ -79,6 +80,43 @@ plan(){ printf '   [dry-run] %s\n' "$*"; }
 sha256_of(){  # portable sha256 of a file -> bare hex
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}'
   else shasum -a 256 "$1" | awk '{print $1}'; fi
+}
+mise_is_current(){
+  local version
+  # --version does not activate tools; avoid discovering config in the caller's cwd.
+  version="$(cd / && MISE_OFFLINE=1 mise --version 2>/dev/null)" || return 1
+  version="${version%% *}"
+  [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || return 1
+  awk -v have="$version" -v want="${MISE_VERSION#v}" 'BEGIN {
+    split(have, h, "."); split(want, w, ".")
+    for (i=1; i<=3; i++) {
+      if (h[i]+0 > w[i]+0) exit 0
+      if (h[i]+0 < w[i]+0) exit 1
+    }
+    exit 0
+  }'
+}
+install_tmux_plugins(){
+  local spec repo commit target status count=0
+  while IFS= read -r spec; do
+    repo="${spec%#*}"; commit="${spec##*#}"
+    [[ "$repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ && "$commit" =~ ^[a-f0-9]{40}$ ]] \
+      || { echo "Invalid tmux plugin pin: $spec" >&2; return 1; }
+    target="${1:-$HOME/.local/share/tmux/plugins}/${repo##*/}"
+    if [ -d "$target/.git" ]; then
+      status="$(git -C "$target" status --porcelain)" || return 1
+      [ -z "$status" ] \
+        || { echo "Local changes in $target; refusing to replace or execute them" >&2; return 1; }
+    else
+      git clone --filter=blob:none --no-checkout "https://github.com/$repo.git" "$target" || return 1
+    fi
+    if ! git -C "$target" cat-file -e "$commit^{commit}" 2>/dev/null; then
+      git -C "$target" fetch --depth=1 origin "$commit" || return 1
+    fi
+    git -C "$target" checkout --detach "$commit" || return 1
+    count=$((count + 1))
+  done < <(sed -n "s/^set -g @plugin '\([^']*\)'.*/\1/p" "$REPO/tmux/.config/tmux/tmux.conf")
+  [ "$count" -gt 0 ] || { echo "No pinned tmux plugins found" >&2; return 1; }
 }
 
 # end-of-run summary: lists every tool (with version) and config plus health,
@@ -144,6 +182,25 @@ to(){  # to <secs> <cmd...>: run capped; exits 124 (timeout) / 142 (perl alarm) 
 
 # `./install.sh --check`: actively verify the install (loads nvim, parses tmux,
 # times shell startup) and report. changes nothing.
+go_tools(){
+  cat <<'GO_TOOLS'
+fzf|fzf
+lazygit|lazygit
+delve|dlv
+k9s|k9s
+kubecolor|kubecolor
+helm|helm
+ax|ax
+go:github.com/air-verse/air|air
+gopls|gopls
+gofumpt|gofumpt
+goimports|goimports
+goimports-reviser|goimports-reviser
+golines|golines
+yamlfmt|yamlfmt
+GO_TOOLS
+}
+
 doctor(){
   set +e
   # mise tools are shims, not on PATH in a non-login shell (e.g. CI), so checks like
@@ -158,9 +215,46 @@ doctor(){
       *)    ic="·" col="$dim" ;;
     esac; printf "   ${col}%s${nc} %-16s ${dim}%s${nc}\n" "$ic" "$2" "${3:-}"; }
   printf "\n${bl}  ━━ dotfiles doctor ━━━━━━━━━━━━━━━━━━━━━━━━━━━━${nc}\n"
+  mise_is_current && row ok "mise security" "$MISE_VERSION or newer" \
+    || row fail "mise security" "requires $MISE_VERSION or newer; run ./install.sh"
 
-  local miss; miss="$(mise ls --missing 2>/dev/null | awk 'NF{print $1}' | paste -sd, - 2>/dev/null)"
-  [ -z "$miss" ] && row ok "tools" "all present" || row warn "tools" "missing: $miss"
+  local miss
+  if miss="$(cd "$REPO" && mise ls --missing 2>/dev/null)"; then
+    [ -z "$miss" ] && row ok "tools" "all present" || row fail "tools" "missing: $miss"
+  else
+    row fail "tools" "could not resolve the configured tool versions"
+  fi
+
+  local go_bin tool binary binary_path go_bad=0
+  go_bin="$(cd "$REPO" && mise which go 2>/dev/null)"
+  while IFS='|' read -r tool binary; do
+    case ",$SKIP," in *",$tool,"*) continue ;; esac
+    binary_path="$(cd "$REPO" && mise which "$binary" 2>/dev/null)"
+    bash "$REPO/tools/check-go.sh" "$go_bin" "$binary_path" >/dev/null 2>&1 || go_bad=1
+  done < <(go_tools)
+  [ "$go_bad" = 0 ] && row ok "Go security" "runtime and audited dependency floors passed" \
+    || row fail "Go security" "missing or stale tool; run ./install.sh"
+  case ",$SKIP," in
+    *,kubectl,*) ;;
+    *) bash "$REPO/tools/check-go.sh" "$go_bin" "$HOME/.local/bin/kubectl" >/dev/null 2>&1 \
+         && row ok "kubectl security" || row fail "kubectl security" "missing or stale custom build" ;;
+  esac
+  case ",$SKIP," in
+    *,pi,*|*,npm:@earendil-works/pi-coding-agent,*) ;;
+    *)
+      local node_bin
+      node_bin="$(cd "$REPO" && mise which node 2>/dev/null)"
+      if [ -x "$HOME/.local/bin/pi" ] && "$node_bin" -e '
+        const {createRequire}=require("node:module");
+        const req=createRequire(process.argv[1]);
+        for (const [name,version] of Object.entries(require(process.argv[2]).overrides)) {
+          if (req(name+"/package.json").version!==version) process.exit(1);
+        }
+      ' "$HOME/.local/share/dotfiles/pi/current/node_modules/@earendil-works/pi-coding-agent/package.json" "$REPO/tools/pi/package.json" >/dev/null 2>&1; then
+        row ok "Pi dependencies" "security overrides verified"
+      else row fail "Pi dependencies" "missing or stale custom install"; fi
+      ;;
+  esac
 
   if [ -L "$HOME/.config/nvim" ] && [ -f "$HOME/.config/shell/common.sh" ]; then row ok "configs linked"
   else row warn "configs linked" "run ./link.sh"; fi
@@ -197,11 +291,11 @@ doctor(){
       && { row ok "tmux config"; tmux -L "$sock" kill-server 2>/dev/null; } || row fail "tmux config" "parse error"
   fi
 
-  # LLM CLIs: a shim can exist while the binary is broken (npm-backed claude/opencode
+  # LLM CLIs: a shim can exist while the binary is broken (npm-backed claude
   # skip the postinstall that fetches the native binary, so it errors "native binary
   # not installed"). actually run each present one rather than trust the shim.
   local t llm_seen="" llm_bad=""
-  for t in claude codex opencode; do
+  for t in claude codex opencode pi; do
     command -v "$t" >/dev/null 2>&1 || continue
     llm_seen=1
     out="$(to 15 "$t" --version 2>&1)"; rc=$?
@@ -209,7 +303,7 @@ doctor(){
       || llm_bad="$llm_bad $t"
   done
   if [ -n "$llm_bad" ]; then row fail "llm clis" "broken:${llm_bad}; run dotfiles-update"
-  elif [ -n "$llm_seen" ]; then row ok "llm clis" "claude codex opencode run"; fi
+  elif [ -n "$llm_seen" ]; then row ok "llm clis" "present CLIs run"; fi
 
   to 8 bash -lic 'exit' >/dev/null 2>&1; rc=$?
   case "$rc" in 124|142) row warn "shell startup" "slow/hang (>8s)" ;; *) row ok "shell startup" "no hang" ;; esac
@@ -227,15 +321,23 @@ log "install log: $LOG"
 # that pipes into sh as "syntax error: newline". github releases are allowlisted.
 # tampered release / MITM / block page all fail the hash instead of running.
 # bump = update MISE_VERSION + the 4 hashes (from SHASUMS256.txt) in one commit.
-MISE_VERSION="v2026.6.1"
 mise_expected_sha(){  # $1 = <os>-<arch>
   case "$1" in
-    linux-x64)   echo 7de295b32bc9d4dd894effe487d76ca46cd8cecbc588a76863e97d6b53c314be ;;
-    linux-arm64) echo 7ba3ec4fe52d24a22a51deaeca1da615b8a39176ac9965a6e820a6759da87881 ;;
-    macos-arm64) echo ac95cf406b8c350dd7e7ac074a9b64c1802c052fa9337820ec18e4b5acc405f7 ;;
-    macos-x64)   echo 5a5bd62cc27c15c029a77724e2a6949e2f2bfc73b0ac1946d8afed79132b6aa5 ;;
+    linux-x64)   echo ccfe12d7a62c6fb9def2a20db1f210f13a51de881f21fd8c85db4b6312405d07 ;;
+    linux-arm64) echo a7c96627e56c075543fe1c1aafeb289d2588d6ddfd4d705fce4ae140c57e190c ;;
+    macos-arm64) echo b20d30788a819fade398a1cb92aee56c383e3c34324162ec39fb8567dee79ba6 ;;
+    macos-x64)   echo 5dde6e3fcda4d8a68b95cc2180dacd58e7b940f86e4579991e13540a5d009055 ;;
   esac
 }
+install_homebrew() (
+  set -e
+  local stage
+  stage="$(mktemp -d)"
+  trap 'rm -rf "$stage"' EXIT
+  curl -qfsSL --proto '=https' https://raw.githubusercontent.com/Homebrew/install/870ddff5dbe61d293a8b4a763090d125e59048a1/install.sh -o "$stage/install.sh" || return 1
+  [ "$(sha256_of "$stage/install.sh")" = 8fd2f1a5287a7c2e3d7362924c677edcc04c5a0e16448c77132d056bc88cf1ed ] || { echo "Homebrew bootstrap checksum mismatch" >&2; return 1; }
+  /bin/bash "$stage/install.sh"
+)
 install_mise(){
   local os arch plat asset url td tmp want got
   os=linux; [ "$OS" = macos ] && os=macos
@@ -272,7 +374,7 @@ if [ ! -f "$REPO/mise.toml" ]; then
   log "Bootstrapping from $REPO_URL"
   if ! have git; then
     if [ "$OS" = macos ]; then
-      have brew || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      have brew || install_homebrew
       brew install git
     else
       $SUDO apt-get update -qq && $SUDO apt-get install -y git
@@ -305,7 +407,7 @@ if [ "$CONFIGS_ONLY" = 0 ]; then
   if [ "$DRY" = 1 ]; then
     plan "$([ "$OS" = macos ] && echo 'brew install git stow' || echo 'apt-get install git stow build-essential unzip')"
   elif [ "$OS" = macos ]; then
-    have brew || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    have brew || install_homebrew
     brew install git stow
   else
     # tolerate a flaky/blocked third-party apt repo (e.g. a proxy serving an HTML page
@@ -336,37 +438,27 @@ if [ "$CONFIGS_ONLY" = 0 ]; then
     plan "CA: build $CA_BUNDLE offline from OS public roots + $CERT_DIR, export NODE_EXTRA_CA_CERTS etc."
   else
     mkdir -p "$CERT_DIR"
-    if ls "$CERT_DIR"/*.pem >/dev/null 2>&1; then
-      log "CA: building trust bundle offline from OS public roots + $CERT_DIR"
-      bash "$REPO/shell/.config/shell/ca-bundle.sh" "$CERT_DIR" "$CA_BUNDLE"
+    # Reconcile Linux's copied roots first; the bundle then reads the refreshed OS store.
+    if [ "$OS" = linux ] && command -v update-ca-certificates >/dev/null 2>&1 \
+       && { [ -n "$SUDO" ] || [ "$(id -u)" = 0 ]; }; then
+      log "CA: reconciling installer-owned OS roots (sudo may prompt)"
+      $SUDO bash "$REPO/shell/.config/shell/ca-system-roots.sh" "$CERT_DIR"
+    fi
+    bash "$REPO/shell/.config/shell/ca-bundle.sh" "$CERT_DIR" "$CA_BUNDLE"
+    if [ -f "$CA_BUNDLE" ]; then
       export SSL_CERT_FILE="$CA_BUNDLE" REQUESTS_CA_BUNDLE="$CA_BUNDLE" PIP_CERT="$CA_BUNDLE" \
-             CURL_CA_BUNDLE="$CA_BUNDLE" NODE_EXTRA_CA_CERTS="$CA_BUNDLE" GIT_SSL_CAINFO="$CA_BUNDLE"
-      log "  trusting $(grep -c 'BEGIN CERT' "$CA_BUNDLE" 2>/dev/null || echo '?') CA certs in the bundle"
-      # also add to the OS trust store (Debian) so tools that read it but ignore the
-      # env vars (mise's Rust client, apt) trust the proxy too. needs sudo (have it for apt).
-      if [ "$OS" = linux ] && command -v update-ca-certificates >/dev/null 2>&1 \
-         && { [ -n "$SUDO" ] || [ "$(id -u)" = 0 ]; }; then
-        log "CA: updating the OS trust store (sudo may prompt)"
-        ci=0
-        for c in "$CERT_DIR"/*.pem; do
-          [ -e "$c" ] || continue; ci=$((ci+1))
-          $SUDO cp "$c" "/usr/local/share/ca-certificates/extra-root-$ci.crt"
-        done
-        if $SUDO update-ca-certificates; then
-          log "  added $ci cert(s) to the OS trust store"
-        else
-          log "  OS trust-store update failed; the user bundle is ready, but system clients may still reject the proxy"
-        fi
-      fi
+             CURL_CA_BUNDLE="$CA_BUNDLE" NODE_EXTRA_CA_CERTS="${CA_BUNDLE%.pem}.extra.pem" GIT_SSL_CAINFO="$CA_BUNDLE"
     else
-      log "CA: none in $CERT_DIR (fine off-VPN; behind a proxy, drop your PEMs there and re-run)"
+      for name in SSL_CERT_FILE REQUESTS_CA_BUNDLE PIP_CERT CURL_CA_BUNDLE NODE_EXTRA_CA_CERTS GIT_SSL_CAINFO; do
+        if [ "${!name:-}" = "$CA_BUNDLE" ] || [ "${!name:-}" = "${CA_BUNDLE%.pem}.extra.pem" ]; then unset "$name"; fi
+      done
     fi
   fi
 
   # ---- 2. mise ----
-  if [ "$DRY" = 1 ]; then plan "ensure mise installed (GitHub release binary)"
-  elif ! have mise; then install_mise; fi
   export PATH="$HOME/.local/bin:$PATH"
+  if [ "$DRY" = 1 ]; then plan "ensure mise $MISE_VERSION or newer (checksum-pinned GitHub release)"
+  elif ! mise_is_current; then install_mise; hash -r; fi
 
   # ---- 3. tools via mise (respects --skip via MISE_DISABLE_TOOLS) ----
   log "Tools via mise${SKIP:+ (skipping: $SKIP)}"
@@ -376,19 +468,43 @@ if [ "$CONFIGS_ONLY" = 0 ]; then
       MISE_TRUSTED_CONFIG_PATHS="$REPO" mise ls --prunable 2>/dev/null | awk 'NF{print "   would remove:  "$1" "$2}' )
     else plan "install mise, then the tools"; fi
   else
-    ( cd "$REPO" && mise trust >/dev/null 2>&1 || true )
+    ( cd "$REPO" && mise trust )
     # node first so npm-backend tools (codex) have an interpreter on a fresh box
     if grep -q '^node' "$REPO/mise.toml"; then
       log "Installing node (runtime for npm-backend tools)"
-      ( cd "$REPO" && mise install -y --verbose node ) || log "node install had issues; see $LOG"
+      ( cd "$REPO" && mise install --locked -y --verbose node )
     fi
     log "Installing all tools (parallel; waiting for every tool to finish)"
-    # non-fatal: one bad tool shouldn't abort the bootstrap; report what's missing
-    if ! ( cd "$REPO" && mise install -y --verbose ); then
-      log "some tools did not install; continuing (full output in $LOG):"
+    # A failed security update must not be reported as a successful bootstrap.
+    if ! ( cd "$REPO" && mise install --locked -y --verbose ); then
+      log "some tools did not install; stopping (full output in $LOG):"
       ( cd "$REPO" && to 30 mise ls --missing | sed 's/^/   still missing: /' ) \
         || log "  missing-tool check failed or timed out; see $LOG"
+      exit 1
     fi
+    # A Go compiler update does not rebuild already-installed Go tools. Verify
+    # their embedded runtime, force one rebuild when stale, then verify again.
+    go_bin="$(cd "$REPO" && mise which go)"
+    jq_bin="$(cd "$REPO" && mise which jq)"
+    PATH="${go_bin%/*}:${jq_bin%/*}:$PATH"
+    export PATH
+    while IFS='|' read -r tool binary; do
+      case ",$SKIP," in *",$tool,"*) continue ;; esac
+      binary_path="$(cd "$REPO" && mise which "$binary")"
+      if ! bash "$REPO/tools/check-go.sh" "$go_bin" "$binary_path"; then
+        ( cd "$REPO" && mise install --locked --force -y "$tool" )
+        bash "$REPO/tools/patch-go.sh" "$go_bin" "$binary_path"
+        bash "$REPO/tools/check-go.sh" "$go_bin" "$binary_path"
+      fi
+    done < <(go_tools)
+    case ",$SKIP," in
+      *,kubectl,*) ;;
+      *) DOTFILES_GO_BIN="$go_bin" bash "$REPO/tools/install-kubectl.sh" ;;
+    esac
+    case ",$SKIP," in
+      *,pi,*|*,npm:@earendil-works/pi-coding-agent,*) ;;
+      *) DOTFILES_NODE_BIN="$(cd "$REPO" && mise which node)" bash "$REPO/tools/install-pi.sh" ;;
+    esac
     # Keep cleanup visible and bounded: these commands can resolve versions for
     # tracked configs, and prune otherwise waits for confirmation on stdin.
     log "Mise install finished; checking unused tool versions (30s limit)"
@@ -401,7 +517,7 @@ if [ "$CONFIGS_ONLY" = 0 ]; then
       log "  unused-version check failed or timed out; skipping cleanup"
     fi
     log "Rebuilding mise shims (60s limit)"
-    to 60 mise reshim || log "  mise reshim failed or timed out; see $LOG"
+    to 60 mise reshim
     export PATH="$SHIMS:$PATH"
     log "Mise tool setup finished"
   fi
@@ -470,7 +586,7 @@ BK="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
 MISE_GLOBAL="$HOME/.config/mise/config.toml"
 if [ "$DRY" = 1 ]; then
   if [ -e "$MISE_GLOBAL" ] || [ -L "$MISE_GLOBAL" ]; then plan "back up $MISE_GLOBAL if it is not this repo's symlink"; fi
-  plan "link ~/.config/mise/config.toml -> repo mise.toml"
+  plan "link global mise config and lockfile -> repo mise.toml and mise.lock"
 else
   mkdir -p "$HOME/.config/mise"
   if { [ -e "$MISE_GLOBAL" ] || [ -L "$MISE_GLOBAL" ]; } \
@@ -480,6 +596,13 @@ else
     echo "   backed up $MISE_GLOBAL"
   fi
   ln -sf "$REPO/mise.toml" "$MISE_GLOBAL"
+  # mise resolves dependency sidecars relative to the real lockfile path.
+  if { [ -e "$HOME/.config/mise/mise.lock" ] || [ -L "$HOME/.config/mise/mise.lock" ]; } \
+     && [ "$(readlink "$HOME/.config/mise/mise.lock" 2>/dev/null || true)" != "$REPO/mise.lock" ]; then
+    mkdir -p "$BK/.config/mise"
+    mv "$HOME/.config/mise/mise.lock" "$BK/.config/mise/mise.lock"
+  fi
+  ln -sf "$REPO/mise.lock" "$HOME/.config/mise/mise.lock"
 fi
 
 # ---- Linux desktop / WSL env: GUI-launched apps do not read .bashrc/.zshrc. ----
@@ -557,22 +680,10 @@ if [ "$DRY" = 1 ]; then
 else
   # `restore` pins plugins to the committed lazy-lock.json; `sync` would rewrite the
   # lock and dirty the tree (blocking auto-pull). bump via `:Lazy sync` + commit.
-  if have nvim; then log "Installing Neovim plugins (to committed lockfile)"; nvim --headless "+Lazy! restore" +qa 2>/dev/null || true; fi
+  if have nvim; then log "Installing Neovim plugins (to committed lockfile)"; nvim --headless "+Lazy! restore" +qa; fi
   if have tmux; then
-    log "Installing tmux plugins (TPM)"
-    # must match TMUX_PLUGIN_MANAGER_PATH in tmux/.config/tmux/tmux.conf
-    TPM_DIR="$HOME/.local/share/tmux/plugins"
-    TPM="$TPM_DIR/tpm"
-    TPM_COMMIT="e261deb1b47614eed3400089ce7197dc68acc4eb"   # pinned; bump intentionally
-    [ -d "$TPM/.git" ] || git clone -q https://github.com/tmux-plugins/tpm "$TPM"
-    # pin to the reviewed commit; fail closed (only run TPM's installer if we got
-    # there, else we'd run whatever HEAD is and the pin means nothing)
-    if git -C "$TPM" checkout -q "$TPM_COMMIT" 2>/dev/null \
-       || { git -C "$TPM" fetch -q origin "$TPM_COMMIT" 2>/dev/null && git -C "$TPM" checkout -q "$TPM_COMMIT" 2>/dev/null; }; then
-      TMUX_PLUGIN_MANAGER_PATH="$TPM_DIR/" "$TPM/bin/install_plugins" >/dev/null 2>&1 || true
-    else
-      log "TPM not at pinned commit $TPM_COMMIT; skipping plugin install (won't run unpinned code)"
-    fi
+    log "Installing tmux plugins (committed revisions)"
+    install_tmux_plugins
   fi
   # generate the active theme's tmux palette (nvim reads themes/ directly)
   if [ -x "$REPO/themes/theme" ]; then
@@ -622,6 +733,12 @@ else [ -f "$HOME/.shell.local" ] || cp "$REPO/shell.local.example" "$HOME/.shell
 # pi settings are machine state (pi rewrites them); seed once, never overwrite
 if [ "$DRY" = 1 ]; then plan "create ~/.pi/agent/settings.json from pi-settings.example.json if absent"
 else [ -f "$HOME/.pi/agent/settings.json" ] || { mkdir -p "$HOME/.pi/agent"; cp "$REPO/pi-settings.example.json" "$HOME/.pi/agent/settings.json"; }; fi
+if [ "$DRY" = 0 ] && [ "$CONFIGS_ONLY" = 0 ]; then
+  case ",$SKIP," in
+    *,pi,*|*,npm:@earendil-works/pi-coding-agent,*) ;;
+    *) "$(cd "$REPO" && mise which node)" "$REPO/tools/pi/migrate-settings.mjs" "$HOME/.pi/agent/settings.json" ;;
+  esac
+fi
 
 if [ "$DRY" = 1 ]; then
   log "Dry run complete. Nothing was changed."

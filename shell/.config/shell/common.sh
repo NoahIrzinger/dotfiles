@@ -33,19 +33,26 @@ export PATH="$PATH:$HOME/.dotfiles/themes"               # `theme` color-theme s
 # behind an SSL-inspecting proxy, tools with their own trust store (node, python,
 # curl) fail with UNABLE_TO_GET_ISSUER_CERT_LOCALLY. drop the proxy's root/intermediate
 # PEMs in ~/.config/certs/extra-roots/, run `ca-rebuild`, and every tool below trusts
-# the combined bundle. no-op off-VPN (no bundle -> nothing exported).
-if [ -f "$HOME/.config/certs/cacert.pem" ]; then
-  export SSL_CERT_FILE="$HOME/.config/certs/cacert.pem"
-  export REQUESTS_CA_BUNDLE="$SSL_CERT_FILE"   # python / requests
-  export PIP_CERT="$SSL_CERT_FILE"             # pip
-  export CURL_CA_BUNDLE="$SSL_CERT_FILE"       # curl
-  export NODE_EXTRA_CA_CERTS="$SSL_CERT_FILE"  # node / npm / codex
-  export GIT_SSL_CAINFO="$SSL_CERT_FILE"       # git
-fi
-ca-rebuild() {  # combine OS public roots + your drop-in certs, without network access
-  bash "$HOME/.config/shell/ca-bundle.sh" || return
-  echo "open a new shell to pick up the CA bundle"
+# the combined bundle. Refresh locally when inputs change; never export a stale
+# bundle after validation fails. Preserve unrelated machine-local overrides.
+_ca_refresh() {
+  local bundle="${1:-$HOME/.config/certs/cacert.pem}" roots="${2:-$HOME/.config/certs/extra-roots}" name value desired rc=0
+  bash "${3:-$HOME/.config/shell/ca-bundle.sh}" "$roots" "$bundle" "${4:-}" >/dev/null || rc=$?
+  for name in SSL_CERT_FILE REQUESTS_CA_BUNDLE PIP_CERT CURL_CA_BUNDLE NODE_EXTRA_CA_CERTS GIT_SSL_CAINFO; do
+    eval 'value=${'"$name"'-}'
+    desired="$bundle"
+    # Extend Node's maintained built-in store only with explicit corporate roots.
+    [ "$name" != NODE_EXTRA_CA_CERTS ] || desired="${bundle%.pem}.extra.pem"
+    if [ "$rc" = 0 ] && [ -f "$bundle" ]; then
+      export "$name=$desired"
+    elif [ "$value" = "$bundle" ] || [ "$value" = "${bundle%.pem}.extra.pem" ]; then
+      unset "$name"
+    fi
+  done
+  return "$rc"
 }
+_ca_refresh || printf '%s\n' 'CA: refresh failed; generated overrides disabled (last valid file preserved)' >&2
+ca-rebuild() { _ca_refresh; }
 
 # --- vi mode on the command line ---
 # vi editing at the prompt, with the niceties a hand setup adds: snappy Esc, jk to

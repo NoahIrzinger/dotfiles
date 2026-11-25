@@ -1,18 +1,29 @@
--- Bootstrap lazy.nvim
+-- Verify the plugin manager against the committed lock before executing it.
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+local lockfile = vim.fn.stdpath("config") .. "/lazy-lock.json"
+local lock = vim.json.decode(table.concat(vim.fn.readfile(lockfile), "\n"))
+local commit = assert(lock["lazy.nvim"] and lock["lazy.nvim"].commit, "lazy.nvim missing from lockfile")
+assert(#commit == 40 and commit:match("^%x+$"), "Invalid lazy.nvim commit")
+local function git(args)
+	local out = vim.fn.system(args)
+	if vim.v.shell_error ~= 0 then
+		error("lazy.nvim bootstrap failed: " .. out)
+	end
+	return vim.trim(out)
+end
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
 	local lazyrepo = "https://github.com/folke/lazy.nvim.git"
-	local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
-	if vim.v.shell_error ~= 0 then
-		vim.api.nvim_echo({
-			{ "Failed to clone lazy.nvim:\n", "ErrorMsg" },
-			{ out, "WarningMsg" },
-			{ "\nPress any key to exit..." },
-		}, true, {})
-		vim.fn.getchar()
-		os.exit(1)
-	end
+	git({ "git", "clone", "--filter=blob:none", "--no-checkout", lazyrepo, lazypath })
+else
+	assert(
+		git({ "git", "-C", lazypath, "status", "--porcelain" }) == "",
+		"lazy.nvim has local changes; refusing to load"
+	)
 end
+if git({ "git", "-C", lazypath, "rev-parse", "HEAD" }) ~= commit then
+	git({ "git", "-C", lazypath, "fetch", "--depth=1", "origin", commit })
+end
+git({ "git", "-C", lazypath, "checkout", "--detach", commit })
 vim.opt.rtp:prepend(lazypath)
 
 -- Make sure to setup `mapleader` and `maplocalleader` before

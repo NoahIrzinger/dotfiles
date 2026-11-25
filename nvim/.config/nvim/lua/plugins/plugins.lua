@@ -923,36 +923,48 @@ return {
 		"mason-org/mason.nvim",
 		lazy = false,
 		config = function()
-			require("mason").setup()
-			-- Non-LSP tools. LSP server installation is declared in mason-lspconfig
-			-- below using lspconfig server names.
+			require("mason").setup({
+				-- Native registry pin: package recipes and versions advance together.
+				registries = { "github:mason-org/mason-registry@2026-10-28-lunar-market" },
+				PATH = "append", -- keep mise's patched jq, StyLua and Delve first
+			})
 			local ensure = {
 				-- debuggers
 				"debugpy",
 				"netcoredbg",
 				-- formatters / linters
 				"black",
-				"gofumpt",
-				"goimports",
-				"goimports-reviser",
-				"golines",
-				"stylua",
 				"prettierd",
-				"yamlfmt",
 				"yamllint",
 				"htmlbeautifier",
-				"jq",
 				"cpptools",
+				-- LSP tools use the same registry pin and update check.
+				"html-lsp",
+				"htmx-lsp",
+				"gradle-language-server",
+				"lua-language-server",
+				"basedpyright",
+				"ruff",
+				"omnisharp",
+				"typescript-language-server",
+				"clangd",
 			}
 			-- only auto-install in a real session, not headless (doctor/CI/`+Lazy! restore`),
 			-- where a +qa would abort mid-download and thrash on every invocation.
 			if #vim.api.nvim_list_uis() > 0 then
 				local registry = require("mason-registry")
-				registry.refresh(function()
+				registry.refresh(function(success)
+					if not success then
+						vim.notify("Pinned Mason registry unavailable; tool updates skipped", vim.log.levels.ERROR)
+						return
+					end
 					for _, name in ipairs(ensure) do
 						local ok, pkg = pcall(registry.get_package, name)
-						if ok and not pkg:is_installed() then
-							pkg:install()
+						if ok and not pkg:is_installing() then
+							local version = pkg:get_latest_version() -- from the fixed registry, not a remote latest query
+							if pkg:get_installed_version() ~= version then
+								pkg:install({ version = version })
+							end
 						end
 					end
 				end)
@@ -963,18 +975,7 @@ return {
 		"mason-org/mason-lspconfig.nvim",
 		dependencies = { "mason-org/mason.nvim", "neovim/nvim-lspconfig" },
 		opts = {
-			ensure_installed = {
-				"gopls",
-				"html",
-				"htmx",
-				"gradle_ls",
-				"lua_ls",
-				"basedpyright",
-				"ruff",
-				"omnisharp",
-				"ts_ls",
-				"clangd",
-			},
+			ensure_installed = {}, -- installation is versioned in the Mason block above
 			automatic_enable = false,
 		},
 	},
@@ -1017,9 +1018,6 @@ return {
 				global_keymaps = true,
 				global_keymaps_prefix = "<leader>R",
 				kulala_keymaps_prefix = "",
-				additional_curl_options = {
-					"--insecure",
-				},
 			})
 		end,
 

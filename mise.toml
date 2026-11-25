@@ -1,8 +1,7 @@
-# Single canonical toolset. Versions are PINNED (to a major/minor line) rather than
-# "latest" for reproducibility and supply-chain review: a fresh install gets the same
-# tools across machines, and a surprise upstream major can't land without a reviewed
-# commit here. mise verifies download checksums for these registry tools. Bump a line
-# intentionally (e.g. `mise use ripgrep@16`) and commit it.
+# Single canonical toolset. mise.lock records resolved versions, checksums and npm
+# dependency graphs for Linux/macOS on x64/ARM64. Bootstrap requires the lockfile.
+# After an intentional version change, refresh with:
+# mise lock --platform linux-x64,linux-arm64,macos-arm64,macos-x64
 # Opt out per machine:  ./install.sh --skip gradle,java
 #   or persist:         export MISE_DISABLE_TOOLS="gradle,java"
 [tools]
@@ -10,11 +9,11 @@
 neovim    = "0.12"
 tmux      = "3.8"
 zoxide    = "0.10.0"
-fzf       = "0.75.0"
+fzf       = { version = "0.75.0", install_env = { GOTOOLCHAIN = "local" } }
 ripgrep   = "15"
 fd        = "10"
 jq        = "1.8"
-lazygit   = "0.66.3"
+lazygit   = { version = "0.66.3", install_env = { GOTOOLCHAIN = "local" } }
 shellcheck = "0.11"
 stylua     = "2.6.0"
 # kulala.nvim builds its own http parser at setup via the `tree-sitter` CLI
@@ -26,19 +25,23 @@ go        = "1.27.4"
 # Delve must track the Go toolchain closely. Mason's delve can lag and Go will
 # reject old debuggers at launch ("version of Delve is too old"). Keep dlv in
 # mise so it wins PATH before Mason's bin.
-# held at 1.26.3: the v1.27.0 GitHub release ships zero binary assets, so the aqua
-# backend has nothing to download ("no asset found"). bump once upstream attaches
-# darwin/linux binaries again (Renovate will re-propose it).
-"aqua:go-delve/delve" = "1.27.2"
+delve     = { version = "1.27.2", install_env = { GOTOOLCHAIN = "local" } }
 python    = "3.15.2"
 node      = "24.22.3"
-"go:github.com/air-verse/air" = "1.67.4"
+"go:github.com/air-verse/air" = { version = "1.67.4", install_env = { GOTOOLCHAIN = "local" } }
+# Editor Go tools use the same patched compiler rather than Mason's prebuilt assets.
+gopls = { version = "0.24.0", install_env = { GOTOOLCHAIN = "local" } }
+gofumpt = { version = "0.12.0", install_env = { GOTOOLCHAIN = "local" } }
+goimports = { version = "0.52.0", install_env = { GOTOOLCHAIN = "local" } }
+goimports-reviser = { version = "3.13.2", install_env = { GOTOOLCHAIN = "local" } }
+golines = { version = "0.16.0", install_env = { GOTOOLCHAIN = "local" } }
+yamlfmt = { version = "0.21.0", install_env = { GOTOOLCHAIN = "local" } }
 
 # kubernetes
-kubectl   = "1.37.2"
-k9s       = "0.51.0"
-kubecolor = "0.9.0"
-helm      = "4"
+# kubectl needs Kubernetes' vendored staging modules: tools/install-kubectl.sh.
+k9s       = { version = "0.51.0", install_env = { GOTOOLCHAIN = "local" } }
+kubecolor = { version = "0.9.0", install_env = { GOTOOLCHAIN = "local" } }
+helm      = { version = "4.3.2", install_env = { GOTOOLCHAIN = "local", GOFLAGS = "-ldflags=-X=helm.sh/helm/v4/internal/version.version=v4.3.2" } }
 
 # codex via the npm backend (independent of the node tool, so it survives node
 # upgrades, unlike a plain `npm i -g`). EXACT version on purpose: a partial pin
@@ -46,12 +49,8 @@ helm      = "4"
 # activation, which hangs behind a proxy. an exact version is a filesystem check.
 "npm:@openai/codex" = "0.172.0"
 
-# pi (earendil) is a pure-JS coding agent: bin is dist/cli.js, os=any, no
-# postinstall. so the npm backend works cleanly here, unlike claude/opencode
-# below (whose npm wrappers need a postinstall mise skips). same exact-pin rule
-# as codex: an exact version is a filesystem check, not a proxy-hanging registry
-# query. bump with `mise use npm:@earendil-works/pi-coding-agent@<ver>`.
-"npm:@earendil-works/pi-coding-agent" = "0.99.2"
+# Pi is installed from tools/pi/package-lock.json with an Undici security override.
+# mise's npm backend cannot express that override; see tools/install-pi.sh.
 
 # gemini (google) is pure-JS too: bin is bundle/gemini.js, no os/cpu pin, no
 # postinstall. npm backend works cleanly like codex/pi above. same exact-pin
@@ -59,7 +58,7 @@ helm      = "4"
 # query. bump with `mise use npm:@google/gemini-cli@<ver>`.
 "npm:@google/gemini-cli" = "0.71.1"
 
-# claude + opencode ship native binaries; their npm packages are thin downloaders
+# Claude ships a native binary; its npm package is a thin downloader
 # whose postinstall mise's npm backend skips (the wrapper then errors "native binary
 # not installed"). use the aqua backend, which fetches the real release binary.
 # claude self-update is off (DISABLE_AUTOUPDATER in common.sh) so mise owns the version.
@@ -68,15 +67,29 @@ opencode = "1.19.6"
 
 # heavier toolchains (android builds etc.). skip on lean boxes / CI:
 #   ./install.sh --skip gradle,java,android-sdk
-java          = "temurin-21.0.13+100000002.0.LTS"   # LTS, AGP-compatible; don't bump past what Android supports
-gradle        = "9"
+java          = "temurin-21.0.13.1+2.0.LTS"   # LTS, AGP-compatible; don't bump past what Android supports
+gradle        = "9.9.2"
 "android-sdk" = "11.0"          # cmdline-tools (sdkmanager); install platforms/build-tools per project
 
-# ax (agentswitch) straight from its GitHub release via the github backend: mise
-# picks the os/arch tarball, verifies it against the release's checksums.txt, and
-# puts `ax` on the shim PATH. exact pin; Renovate bumps it per release. on a box
-# that builds ax from source, skip it: MISE_DISABLE_TOOLS="github:agentswitch-org/ax".
-"github:agentswitch-org/ax" = "0.1.6"
+# Build TLS clients with the patched compiler, not the older runtime embedded in
+# their vendor binaries. Native mise Go backend; Go verifies modules via sum.golang.org.
+ax = { version = "0.1.6", install_env = { GOTOOLCHAIN = "local" } }
+
+[tool_alias]
+opencode = "aqua:anomalyco/opencode"
+fzf = "go:github.com/junegunn/fzf"
+lazygit = "go:github.com/jesseduffield/lazygit"
+delve = "go:github.com/go-delve/delve/cmd/dlv"
+k9s = "go:github.com/derailed/k9s"
+kubecolor = "go:github.com/kubecolor/kubecolor"
+helm = "go:helm.sh/helm/v4/cmd/helm"
+ax = "go:github.com/agentswitch-org/ax/cmd/ax"
+gopls = "go:golang.org/x/tools/gopls"
+gofumpt = "go:mvdan.cc/gofumpt"
+goimports = "go:golang.org/x/tools/cmd/goimports"
+goimports-reviser = "go:github.com/incu6us/goimports-reviser/v3"
+golines = "go:github.com/golangci/golines"
+yamlfmt = "go:github.com/google/yamlfmt/cmd/yamlfmt"
 
 [settings]
 # Installation is explicit via install.sh/mise install. A Python shim invoked by
