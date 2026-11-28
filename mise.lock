@@ -337,10 +337,10 @@ checksum = "sha256:977614af0504c81045e7fd85596dbca0e5f951b96681516dadafedcca8c44
 url = "https://nodejs.org/dist/v24.22.3/node-v24.22.3-darwin-x64.tar.gz"
 
 [[tools."npm:@earendil-works/pi-coding-agent"]]
-version = "1.6.1"
-aube = { path = ".mise/locks/npm-earendil-works-pi-coding-agent/1.6.1", digest = "sha256:f89b624eac0996b80557dca44d6df36bdc2db10d792a4e9c550b66100efbafce" }
+version = "1.7.0"
+aube = { path = ".mise/locks/npm-earendil-works-pi-coding-agent/1.7.0", digest = "sha256:8cecb086e2c5af2929c6244031e93e2bce05bff036551c2d3e233a953681de79" }
 backend = "npm:@earendil-works/pi-coding-agent"
-specifiers = ["1.6.1"]
+specifiers = ["1.7.0"]
 
 [[tools."npm:@google/gemini-cli"]]
 version = "0.71.1"
