@@ -27,7 +27,7 @@ go        = "1.27.4"
 # mise so it wins PATH before Mason's bin.
 delve     = { version = "1.27.2", install_env = { GOTOOLCHAIN = "local" } }
 python    = "3.15.2"
-node      = "24.22.3"
+node      = "26.13.1"
 "go:github.com/air-verse/air" = { version = "1.67.4", install_env = { GOTOOLCHAIN = "local" } }
 # Editor Go tools use the same patched compiler rather than Mason's prebuilt assets.
 gopls = { version = "0.24.0", install_env = { GOTOOLCHAIN = "local" } }
