@@ -355,33 +355,25 @@ backend = "npm:@openai/codex"
 specifiers = ["0.172.0"]
 
 [[tools.opencode]]
-version = "1.19.6"
+version = "2.4.2"
 backend = "aqua:anomalyco/opencode"
-specifiers = ["1.19.6"]
+specifiers = ["2.4.2"]
 
 [tools.opencode."platforms.linux-arm64"]
-checksum = "sha256:5b68c1f4c5e75b4134e664cc8f36d634d64208d4fcfe5bcf3b48bab699c2dbac"
-checksum_source = "mise-versions"
-url = "https://github.com/anomalyco/opencode/releases/download/v1.19.6/opencode-linux-arm64.tar.gz"
-url_api = "https://api.github.com/repos/anomalyco/opencode/releases/assets/757980758"
+checksum = "sha256:bf8d18dde87224629341ff398e76c7c17216b9b406affc728b6c1a5c136abf93"
+url = "https://opencode.ai/files/bin/2.4.2/opencode-linux-arm64.tar.gz"
 
 [tools.opencode."platforms.linux-x64"]
-checksum = "sha256:47734e08968b30cc22a0bffb6d9feeed76ad4aa743213a12122040392d09a057"
-checksum_source = "mise-versions"
-url = "https://github.com/anomalyco/opencode/releases/download/v1.19.6/opencode-linux-x64.tar.gz"
-url_api = "https://api.github.com/repos/anomalyco/opencode/releases/assets/757980715"
+checksum = "sha256:452912288f934d1771bd5bd0d8611ba3a6adc3db3ac3333c37facf373770ba66"
+url = "https://opencode.ai/files/bin/2.4.2/opencode-linux-x64.tar.gz"
 
 [tools.opencode."platforms.macos-arm64"]
-checksum = "sha256:c0be3f34dde2fdcb31b25120f303c6ed5b69b828f16e5e0fbecff21a882adda1"
-checksum_source = "mise-versions"
-url = "https://github.com/anomalyco/opencode/releases/download/v1.19.6/opencode-darwin-arm64.zip"
-url_api = "https://api.github.com/repos/anomalyco/opencode/releases/assets/758015643"
+checksum = "sha256:d5a8c9fb4b121ebd531d9369d7ba6ce8af91c9d4d51d6685dbb4e0c7224fa5f3"
+url = "https://opencode.ai/files/bin/2.4.2/opencode-darwin-arm64.zip"
 
 [tools.opencode."platforms.macos-x64"]
-checksum = "sha256:39aabb10005059f80f007a119a33405dcd46325300993eb6cbcc961c7243dd31"
-checksum_source = "mise-versions"
-url = "https://github.com/anomalyco/opencode/releases/download/v1.19.6/opencode-darwin-x64.zip"
-url_api = "https://api.github.com/repos/anomalyco/opencode/releases/assets/758015668"
+checksum = "sha256:ea4204a75602ce4f1d2121c781a15fa3af6d1c4285cf8b6ae81f61a76deca2a2"
+url = "https://opencode.ai/files/bin/2.4.2/opencode-darwin-x64.zip"
 
 [[tools.python]]
 version = "3.15.2"
